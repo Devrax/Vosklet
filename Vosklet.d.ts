@@ -6,6 +6,8 @@ declare global {
   }
 }
 
+export function loadVosklet(moduleArg?: Record<string, unknown>): Promise<Module>;
+
 export type EpMode =
   | "ANSWER_DEFAULT"
   | "DISABLED"

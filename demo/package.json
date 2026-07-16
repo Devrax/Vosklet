@@ -1,0 +1,22 @@
+{
+  "name": "vosklet-spanish-challenge-demo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.32.1",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "android:sync": "pnpm run build && pnpm exec cap sync android",
+    "android:open": "pnpm run android:sync && pnpm exec cap open android",
+    "android:run": "pnpm run android:sync && pnpm exec cap run android"
+  },
+  "dependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/core": "latest",
+    "vosklet": "file:.."
+  },
+  "devDependencies": {
+    "@capacitor/cli": "latest",
+    "vite": "latest"
+  }
+}

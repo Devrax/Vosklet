@@ -2,11 +2,19 @@
 INITIAL_MEMORY=${INITIAL_MEMORY:-315mb}
 MAX_THREADS=${MAX_THREADS:-1}
 EMSDK=${EMSDK:-../emsdk}
-JOBS=${JOBS:-$(nproc)}
+if [ -z "${JOBS:-}" ]; then
+  if command -v nproc > /dev/null; then
+    JOBS=$(nproc)
+  elif command -v sysctl > /dev/null; then
+    JOBS=$(sysctl -n hw.ncpu)
+  else
+    JOBS=1
+  fi
+fi
 VOSKLET_MODE=${VOSKLET_MODE:-threaded}
 OUTPUT_BASENAME=${OUTPUT_BASENAME:-Vosklet}
 
-if [ "$EMSDK" != ../emsdk ] && [ ! -f "$EMSDK" ]; then
+if [ "$EMSDK" != ../emsdk ] && [ ! -d "$EMSDK" ]; then
   echo "Invalid emsdk path"
   exit 1
 fi
@@ -26,7 +34,7 @@ if ! [[ $INITIAL_MEMORY =~ ^[0-9]+([kmgt]b)?$ ]]; then
   echo "INITIAL_MEMORY valid suffixes are kb, mb, gb, tb, none (bytes)"
   exit 1
 fi
-if [ "$EMSDK" = ../emsdk ] && [ ! -f "$EMSDK" ]; then
+if [ "$EMSDK" = ../emsdk ] && [ ! -d "$EMSDK" ]; then
   echo "Installing emsdk + Emscripten..."
   git clone --depth=1 https://github.com/emscripten-core/emsdk.git ../emsdk &&
   cd ../emsdk &&
@@ -37,11 +45,13 @@ fi
 export PATH=:$PATH:$(realpath "$EMSDK")/upstream/bin &&
 
 cd .. &&
-SRC=$(realpath src)
-KALDI=$(realpath kaldi)
-VOSK=$(realpath vosk)
-OPENFST=$(realpath openfst)
-OPENBLAS=$(realpath openblas)
+ROOT=$(pwd)
+SRC="$ROOT/src"
+KALDI="$ROOT/kaldi"
+VOSK="$ROOT/vosk"
+OPENFST="$ROOT/openfst"
+OPENBLAS="$ROOT/openblas"
+OPENBLAS_LIB=$(find "$OPENBLAS/lib" -maxdepth 1 -name 'libopenblas*.a' -print -quit 2> /dev/null)
 
 SHARED_FLAGS="-g0 -O3 -flto -msimd128 -mreference-types -mextended-const -msign-ext -mmutable-globals"
 if [ "$VOSKLET_MODE" = threaded ]; then
@@ -50,7 +60,11 @@ fi
 
 if [ ! -f "$OPENFST/lib/libfst.a" ]; then
   rm -rf /tmp/openfst &&
-  wget https://www.openfst.org/twiki/pub/FST/FstDownload/openfst-1.8.4.tar.gz -O /tmp/openfst.tgz &&
+  if command -v curl > /dev/null; then
+    curl --fail --location https://www.openfst.org/twiki/pub/FST/FstDownload/openfst-1.8.4.tar.gz --output /tmp/openfst.tgz
+  else
+    wget https://www.openfst.org/twiki/pub/FST/FstDownload/openfst-1.8.4.tar.gz -O /tmp/openfst.tgz
+  fi &&
   mkdir /tmp/openfst &&
   tar -xzf /tmp/openfst.tgz -C /tmp/openfst --strip-component 1 &&
   cd /tmp/openfst &&
@@ -58,30 +72,45 @@ if [ ! -f "$OPENFST/lib/libfst.a" ]; then
   CXXFLAGS="$SHARED_FLAGS -O3 -fno-rtti" emconfigure ./configure --prefix="$OPENFST" --enable-static --disable-shared --enable-ngram-fsts --disable-bin &&
   emmake make -j"$JOBS" install > /dev/null
 fi
-if [ ! -f "$OPENBLAS/lib/libopenblas.a" ]; then
+if [ -z "$OPENBLAS_LIB" ]; then
   rm -rf /tmp/openblas &&
   git clone -b v0.3.30 https://github.com/OpenMathLib/OpenBLAS --depth=1 /tmp/openblas &&
   cd /tmp/openblas &&
   git apply "$SRC"/OpenBLAS.patch &&
 
-  # Change HOSTCC to the default C compiler on your machine
-  openblasFlags="CC=emcc HOSTCC=clang-20 TARGET=RISCV64_GENERIC USE_THREAD=0 NO_SHARED=1 BINARY=32 BUILD_SINGLE=1 BUILD_DOUBLE=1 BUILD_BFLOAT16=0 BUILD_COMPLEX16=0 BUILD_COMPLEX=0"
+  HOSTCC=${HOSTCC:-clang}
+  openblasFlags="CC=emcc HOSTCC=$HOSTCC AR=emar RANLIB=emranlib TARGET=RISCV64_GENERIC USE_THREAD=0 NO_SHARED=1 BINARY=32 BUILD_SINGLE=1 BUILD_DOUBLE=1 BUILD_BFLOAT16=0 BUILD_COMPLEX16=0 BUILD_COMPLEX=0"
   openblasCFlags="$SHARED_FLAGS -fno-exceptions -fno-rtti -Wno-implicit-function-declaration -Wno-unused-function -Wno-unused-but-set-variable"
   make $openblasFlags CFLAGS="$openblasCFlags" PREFIX="$OPENBLAS" -j"$JOBS" > /dev/null &&
   make $openblasFlags CFLAGS="$openblasCFlags" PREFIX="$OPENBLAS" -j"$JOBS" install
 fi
+OPENBLAS_LIB=$(find "$OPENBLAS/lib" -maxdepth 1 -name 'libopenblas*.a' -print -quit 2> /dev/null)
+if [ -z "$OPENBLAS_LIB" ]; then
+  echo "Unable to locate the OpenBLAS static library"
+  exit 1
+fi
 
-if [ ! -f "$KALDI/src/kaldi.mk" ]; then
-  git clone --depth=1 https://github.com/kaldi-asr/kaldi "$KALDI" &&
+if [ ! -d "$KALDI/.git" ]; then
+  git clone --depth=1 https://github.com/kaldi-asr/kaldi "$KALDI"
+fi
+if [ ! -f "$KALDI/src/online2/kaldi-online2.a" ]; then
   cd "$KALDI"/src &&
-  CXXFLAGS="$SHARED_FLAGS -UHAVE_EXECINFO_H -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -fwasm-exceptions -Wno-unused-variable -Wno-unused-but-set-variable" LDFLAGS="-lembind" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --fst-version=1.8.4 --debug-level=0 --fst-root="$OPENFST" --openblas-root="$OPENBLAS" --host=WASM &&
+  CXXFLAGS="$SHARED_FLAGS -I$OPENBLAS/include -UHAVE_EXECINFO_H -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -fwasm-exceptions -Wno-unused-variable -Wno-unused-but-set-variable" LDFLAGS="-lembind" emconfigure ./configure --use-cuda=no --with-cudadecoder=no --static --static-math=yes --static-fst=yes --fst-version=1.8.4 --debug-level=0 --mathlib=OPENBLAS --fst-root="$OPENFST" --openblas-root="$OPENBLAS" --host=WASM &&
+  cat >> kaldi.mk << EOF
+CXXFLAGS := \$(filter-out -DHAVE_CLAPACK -pthread,\$(CXXFLAGS)) -DHAVE_OPENBLAS -I$OPENBLAS/include -DKALDI_WASM
+LDLIBS := \$(filter-out -framework Accelerate -lpthread -ldl,\$(LDLIBS)) $OPENBLAS_LIB -lm
+EOF
   emmake make -j"$JOBS" online2 rnnlm > /dev/null
 fi
 
+if [ ! -d "$VOSK/.git" ]; then
+  git clone -b v0.3.50 --depth=1 https://github.com/alphacep/vosk-api "$VOSK"
+fi
+if git -C "$VOSK" apply --check "$SRC"/Vosk.patch > /dev/null 2>&1; then
+  git -C "$VOSK" apply "$SRC"/Vosk.patch
+fi
 if [ ! -f "$VOSK/src/vosk.a" ]; then
-  git clone -b v0.3.50 --depth=1 https://github.com/alphacep/vosk-api "$VOSK" &&
   cd "$VOSK"/src &&
-  git apply "$SRC"/Vosk.patch &&
   voskFiles="recognizer.o language_model.o model.o spk_model.o vosk_api.o" &&
 
   # shellcheck disable=SC2086
@@ -96,7 +125,7 @@ voskletFlags="$SHARED_FLAGS -fno-rtti -sSTRICT"
 if [ "$VOSKLET_MODE" = threaded ]; then
   voskletFlags="$voskletFlags -sWASM_WORKERS"
 fi
-voskletLDFlags="-sWASMFS -sMODULARIZE -sTEXTDECODER=2 -sEVAL_CTORS=2 -sALLOW_UNIMPLEMENTED_SYSCALLS -sINITIAL_MEMORY=$INITIAL_MEMORY -sALLOW_MEMORY_GROWTH -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sINCOMING_MODULE_JS_API=wasmMemory,instantiateWasm,wasm -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sENVIRONMENT=web,worker -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$OPENBLAS -l:lib/libopenblas.a -L$VOSK/src -l:vosk.a -lembind --no-entry --closure 1 --pre-js Wrapper.js"
+voskletLDFlags="-sWASMFS -sMODULARIZE -sTEXTDECODER=2 -sEVAL_CTORS=2 -sALLOW_UNIMPLEMENTED_SYSCALLS -sINITIAL_MEMORY=$INITIAL_MEMORY -sALLOW_MEMORY_GROWTH -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sINCOMING_MODULE_JS_API=wasmMemory,instantiateWasm,wasm -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sENVIRONMENT=web,worker -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$OPENBLAS/lib -l:$(basename "$OPENBLAS_LIB") -L$VOSK/src -l:vosk.a -lembind --no-entry --closure 1 --pre-js Wrapper.js"
 
 # shellcheck disable=SC2086
 em++ ${voskletFiles//.o/.cc} $voskletFlags -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -DMAX_WORKERS="$MAX_THREADS" -fno-exceptions -std=c++23 -c -I. -I"$VOSK"/src &&

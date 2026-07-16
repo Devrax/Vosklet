@@ -63,7 +63,7 @@ if (ENVIRONMENT_IS_WEB) {
     static async mk(url, storepath, id, normalMdl) {
       let mdl = new CommonModel();
       let result = new Promise((resolve, reject) => {
-        mdl.addEventListener('', ev => {
+        mdl.addEventListener('status', ev => {
           if (!ev.detail) {
             if (normalMdl) mdl['findWord'] = word => mdl.obj['findWord'](word);
             resolve(mdl);
@@ -109,7 +109,7 @@ if (ENVIRONMENT_IS_WEB) {
     static async mk(model, sampleRate, mode, grammar, spkModel) {
       let rec = new Recognizer();
       let result = new Promise((resolve, reject) => {
-        rec.addEventListener('', ev => {
+        rec.addEventListener('status', ev => {
           if (!ev.detail) resolve(rec);
           else reject(ev.detail);
         }, { once: true });

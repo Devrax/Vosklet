@@ -1,0 +1,47 @@
+{
+  "name": "vosklet",
+  "version": "1.0.0",
+  "description": "Browser speech recognition powered by Vosk and WebAssembly.",
+  "type": "module",
+  "main": "./index.mjs",
+  "module": "./index.mjs",
+  "types": "./Vosklet.d.ts",
+  "exports": {
+    ".": {
+      "types": "./Vosklet.d.ts",
+      "import": "./index.mjs",
+      "default": "./index.mjs"
+    },
+    "./singlethread": {
+      "types": "./Vosklet.d.ts",
+      "import": "./index.single.mjs",
+      "default": "./index.single.mjs"
+    },
+    "./Vosklet.js": "./Vosklet.js",
+    "./Vosklet.wasm": "./Vosklet.wasm",
+    "./Vosklet.single.js": "./Vosklet.single.js",
+    "./Vosklet.single.wasm": "./Vosklet.single.wasm"
+  },
+  "files": [
+    "index.mjs",
+    "index.single.mjs",
+    "Vosklet.js",
+    "Vosklet.wasm",
+    "Vosklet.single.js",
+    "Vosklet.single.wasm",
+    "Vosklet.d.ts",
+    "README.md",
+    "Documentation.md",
+    "Documentation.AndroidWebView.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "pack:check": "npm pack --dry-run"
+  },
+  "keywords": [
+    "speech-recognition",
+    "vosk",
+    "wasm",
+    "webassembly"
+  ]
+}
