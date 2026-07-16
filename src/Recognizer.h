@@ -1,6 +1,5 @@
 #pragma once
 #include "CommonModel.h"
-#include <queue>
 
 // Prevent naming conflicts with Vosk's Recognizer class
 #define Recognizer Recognizer_
@@ -12,6 +11,7 @@ struct Recognizer
   Recognizer(int index, float sampleRate, CommonModel *model, CommonModel *spkModel);
   Recognizer(int index, float sampleRate, CommonModel *model, const std::string &grm, int);
   const char *acceptWaveform(int start, int len);
+  const char *finalResult();
   void reset();
   void setEndpointerMode(VoskEndpointerMode mode);
   void setEndpointerDelays(float tStartMax, float tEnd, float tMax);

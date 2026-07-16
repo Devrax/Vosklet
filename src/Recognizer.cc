@@ -1,5 +1,4 @@
 #include "Recognizer.h"
-#include <atomic>
 
 const char *recognizerInitErr{"Unable to initialize recognizer"};
 Recognizer::Recognizer(int index, float sampleRate, CommonModel *model) : rec{vosk_recognizer_new(std::get<VoskModel *>(model->mdl), sampleRate)}
@@ -35,6 +34,10 @@ const char *Recognizer::acceptWaveform(int start, int len)
     return vosk_recognizer_result(rec);
   }
   return nullptr;
+}
+const char *Recognizer::finalResult()
+{
+  return vosk_recognizer_final_result(rec);
 }
 void Recognizer::reset()
 {

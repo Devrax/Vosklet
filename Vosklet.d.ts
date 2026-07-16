@@ -60,7 +60,8 @@ export interface Recognizer extends EventTarget {
     tEnd: number,
     tMax: number
   ): void;
+  finalResult(): string;
+  reset(): void;
 
   delete(processCurrent?: boolean): Promise<void>;
 }
-

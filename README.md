@@ -5,6 +5,7 @@
 
 # Documentation
 - See [Documentation.md](Documentation.md)
+- Android/Capacitor guide: [Documentation.AndroidWebView.md](Documentation.AndroidWebView.md)
 
 # Vosklet ...
 - Is regularly maintained
@@ -63,3 +64,10 @@
   </head>
 </html>
 ```
+
+# Batch/file transcription example
+- Completed recording / file input example: [Examples/fromRecordingBatch.html](Examples/fromRecordingBatch.html)
+
+# Build modes
+- Default threaded build (requires SharedArrayBuffer + COOP/COEP): `cd src && ./make`
+- Android WebView fallback build (single thread, no SharedArrayBuffer requirement): `cd src && VOSKLET_MODE=singlethread OUTPUT_BASENAME=Vosklet.single ./make`

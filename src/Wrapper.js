@@ -9,6 +9,27 @@ if (ENVIRONMENT_IS_WEB) {
   var objs = [];
   var events = ['status', 'partialResult', 'result'];
   let _cache = caches.open('Vosklet');
+  let gzipMagic = [0x1f, 0x8b];
+  let ustarMagic = [0x75, 0x73, 0x74, 0x61, 0x72];
+  let hasGzipMagic = bytes => bytes.length > 1 && bytes[0] == gzipMagic[0] && bytes[1] == gzipMagic[1];
+  let isUstarTar = bytes => bytes.length >= 262 && ustarMagic.every((b, idx) => bytes[257 + idx] == b);
+  let toTarBytes = async (bytes, url) => {
+    if (isUstarTar(bytes)) return bytes;
+    if (typeof DecompressionStream == 'undefined') {
+      if (hasGzipMagic(bytes))
+        throw new Error('Model fetch succeeded but gzip decompression is unavailable in this browser (missing DecompressionStream).');
+      throw new Error('Fetched model bytes from ' + url + ' are invalid: expected a USTAR tar archive or gzip-compressed USTAR tar archive.');
+    }
+    try {
+      let stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+      let decompressed = new Uint8Array(await new Response(stream).arrayBuffer());
+      if (!isUstarTar(decompressed))
+        throw new Error('decompressed bytes are not a USTAR tar archive');
+      return decompressed;
+    } catch (err) {
+      throw new Error('Unable to decode model as gzip-compressed USTAR tar archive from ' + url + ': ' + (err?.message || err));
+    }
+  };
   let processorURL = URL.createObjectURL(new Blob(['(', (() => {
     registerProcessor('VoskletTransferer', class extends AudioWorkletProcessor {
       constructor(opts) {
@@ -58,7 +79,7 @@ if (ENVIRONMENT_IS_WEB) {
         // Caching already handled explicitly 
         res = await fetch(url, { cache: 'no-store' });
         if (!res.ok) throw 'Unable to fetch model, status: ' + res.status;
-        res = new Response(res.body.pipeThrough(new DecompressionStream('gzip')));
+        res = new Response(await toTarBytes(new Uint8Array(await res.arrayBuffer()), url));
         await cache.put(storepath + '?' + id, res.clone());
       }
       else res = await cache.match(req);
@@ -78,6 +99,9 @@ if (ENVIRONMENT_IS_WEB) {
       let start = _malloc(audioData.length * 4);
       HEAPF32.set(audioData, start / 4);
       return UTF8ToString(this.obj['acceptWaveform'](start, audioData.length));
+    }
+    finalResult() {
+      return UTF8ToString(this.obj['finalResult']());
     }
     delete() {
       this.obj.delete();
