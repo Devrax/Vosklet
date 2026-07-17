@@ -217,4 +217,21 @@ stopButton.addEventListener("click", () => {
   void finishRecording();
 });
 
+// Cache FAB: wipes every Cache Storage bucket (the downloaded models) and
+// reloads, so the next launch re-downloads from scratch.
+const clearCacheButton = document.querySelector("#clearCacheButton");
+clearCacheButton.addEventListener("click", async () => {
+  clearCacheButton.disabled = true;
+  debug("cache-clear-requested");
+  try {
+    if ("caches" in globalThis) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    }
+  } catch (error) {
+    console.error("[Vosklet Challenge Worker] cache-clear-failed", error);
+  }
+  location.reload();
+});
+
 initialize();

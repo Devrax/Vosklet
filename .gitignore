@@ -10,3 +10,6 @@ test.wasm
 src/*.o
 Examples/*/node_modules
 Examples/*/dist
+Examples/demo-speaker/models/
+Examples/demo/public/models/
+node_modules/

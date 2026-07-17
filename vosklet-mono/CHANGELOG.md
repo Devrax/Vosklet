@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-17
+
+First stable release. No functional changes since 0.4.0 — the API surface
+(`vosklet-mono`, `vosklet-mono/singlethread`, `vosklet-mono/worker`) is now
+considered stable and covered by semantic versioning.
+
 ## [0.4.0] - 2026-07-17
 
 ### Added
