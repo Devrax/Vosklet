@@ -1,4 +1,4 @@
-import { createVoskletSpeaker, normalizeText, textsMatch } from "vosklet-speaker";
+import { createVoskletSpeaker, normalizeText, textsMatch } from "speaklet";
 import "./style.css";
 
 const modelUrl = new URL("/models/es-small.tar", window.location.origin).href;

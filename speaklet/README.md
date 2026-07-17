@@ -1,24 +1,36 @@
-# vosklet-speaker
+# speaklet
 
 Voice-challenge toolkit for the browser: offline speech recognition
-([vosklet-mono](../vosklet-mono)) unified with on-device speaker verification
+([monosklet](../monosklet)) unified with on-device speaker verification
 ([@jaehyun-ko/speaker-verification](https://www.npmjs.com/package/@jaehyun-ko/speaker-verification),
 NeXt-TDNN via onnxruntime-web), plus the microphone capture that feeds both.
 Everything runs locally with single-threaded wasm — no SharedArrayBuffer,
 COOP, or COEP — so it works in Android WebView, Capacitor, and iOS WKWebView.
 
+**speaklet is built on Vosklet.** Its speech-recognition engine is not an
+independent implementation: speaklet bundles `monosklet`, which directly
+vendors the [Vosklet](https://github.com/msqr1/Vosklet) Vosk + Kaldi
+WebAssembly runtime from the
+[Devrax/Vosklet](https://github.com/Devrax/Vosklet) fork. speaklet adds
+microphone capture, enrollment, and NeXt-TDNN speaker verification around that
+Vosklet-based engine.
+
 ## Install
 
 ```sh
-pnpm add vosklet-speaker
+pnpm add speaklet
 ```
 
-The package is self-contained: the vosklet-mono speech engine (worker host,
+The package is self-contained: the monosklet speech engine (worker host,
 single-thread wasm runtime) is bundled into it at build time. Its only
 dependencies are `onnxruntime-web` and `@jaehyun-ko/speaker-verification`,
 both pinned to exact versions — no version ranges, no surprise transitive
 upgrades. You still serve onnxruntime-web's wasm binaries yourself (see
 `wasmPaths` and the demo app's vite config).
+
+The Vosklet lineage and compiled-in third-party components are documented in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), which ships with the npm
+package.
 
 ## Run the demo
 
@@ -32,7 +44,7 @@ with a home page routing to every example.
 ## Quick start
 
 ```js
-import { createVoskletSpeaker } from "vosklet-speaker";
+import { createVoskletSpeaker } from "speaklet";
 
 const speaker = await createVoskletSpeaker({
   model: { url: "/models/es-small.tar", id: "vosk-model-small-es-0.42" },
@@ -69,6 +81,23 @@ The suite loads two models: a **Vosk speech model** for recognition and a
 **NeXt-TDNN ONNX model** for speaker verification. Each can be bundled with
 your app (fully offline) or fetched from a URL (downloaded once, then kept in
 Cache Storage across launches).
+
+### Which speaker engine does speaklet use?
+
+The high-level `speaker.enroll()`, `speaker.verify()`, and
+`speaker.identify()` methods do **not** use monosklet's native Vosk x-vector
+speaker model. In those methods, Vosk + Kaldi handles speech-to-text, while
+speaker embeddings and comparisons are produced by the external NeXt-TDNN
+ONNX models through `@jaehyun-ko/speaker-verification` and
+`onnxruntime-web`.
+
+This does not restrict the bundled monosklet engine. The complete monosklet
+worker API remains available through `speaker.engine`, including
+`engine.loadSpkModel()` for native Vosk x-vectors. speaklet also re-exports
+`createVoskletMonoWorker()` for applications that want to use that engine
+directly. In other words, speaklet's convenience methods choose NeXt-TDNN for
+speaker verification, while the underlying native Vosk speaker path remains
+available as a lower-level option.
 
 ### Speech model (Vosk)
 

@@ -1,13 +1,13 @@
 /**
  * Microphone capture for challenge flows: acquires the microphone (or uses a
  * caller-provided stream/AudioContext), routes PCM through the engine's
- * AudioWorklet transferer into vosklet-mono's speech monitor, and resolves
+ * AudioWorklet transferer into monosklet's speech monitor, and resolves
  * with the captured audio once the speaker goes silent — or when stop() is
  * called. The WAV blob is encoded before the promise resolves, so callers can
  * hand the raw blocks to transcribe() (which transfers and neuters their
  * buffers) and still keep the audio.
  */
-import { createSpeechMonitor } from "vosklet-mono/singlethread";
+import { createSpeechMonitor } from "monosklet/singlethread";
 import { encodeWav } from "./wav.js";
 
 const DEFAULT_AUDIO_CONSTRAINTS = {

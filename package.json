@@ -37,8 +37,8 @@
     "setup": "bash scripts/setup.sh",
     "fetch:models": "bash scripts/fetch-models.sh",
     "pack:check": "npm pack --dry-run",
-    "build:packages": "pnpm --filter vosklet-mono build && pnpm --filter vosklet-speaker build",
-    "pack:speaker": "pnpm --filter vosklet-mono build && pnpm --filter vosklet-speaker exec npm pack",
+    "build:packages": "pnpm --filter monosklet build && pnpm --filter speaklet build",
+    "pack:speaklet": "pnpm --filter monosklet build && pnpm --filter speaklet exec npm pack",
     "demo": "pnpm --filter vosklet-demos dev",
     "demo:build": "pnpm --filter vosklet-demos build"
   },

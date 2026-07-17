@@ -122,7 +122,7 @@ export function createSpeakerVerifier(options = {}) {
     referenceStore = createLocalStorageReferenceStore(
       // Embeddings are only comparable within one model, so the model id is
       // part of the storage key — switching models forces re-enrollment.
-      `vosklet-speaker-reference:${model}`
+      `speaklet-reference:${model}`
     )
   } = options;
 
@@ -194,7 +194,7 @@ export function createSpeakerVerifier(options = {}) {
   // loadEnrollmentAudio() returns null.
 
   function enrollmentKey(id) {
-    return `vosklet-speaker-enrollment/${encodeURIComponent(id)}`;
+    return `speaklet-enrollment/${encodeURIComponent(id)}`;
   }
 
   function toPersistableBlob(audio) {

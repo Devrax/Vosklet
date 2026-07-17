@@ -1,6 +1,6 @@
 /**
- * vosklet-speaker: one API for voice-challenge flows in the browser —
- * offline speech recognition (vosklet-mono) unified with on-device speaker
+ * speaklet: one API for voice-challenge flows in the browser —
+ * offline speech recognition (monosklet) unified with on-device speaker
  * verification (@jaehyun-ko/speaker-verification), plus the microphone
  * capture that feeds both.
  *
@@ -10,14 +10,14 @@
  * - startCapture() / createSpeakerVerifier(): the pieces, for apps that
  *   manage their own engine, streams, or storage.
  */
-import { createVoskletMonoWorker } from "vosklet-mono/worker";
+import { createVoskletMonoWorker } from "monosklet/worker";
 import { startCapture } from "./capture.js";
 import { createSpeakerVerifier } from "./verifier.js";
 import { wordOverlap } from "./textMatch.js";
 
-// The speech engine ships inside this package — no vosklet-mono install
+// The speech engine ships inside this package — no monosklet install
 // needed to boot a custom engine for startCapture() or createVoskletSpeaker().
-export { createVoskletMonoWorker, supportsWorkerHost } from "vosklet-mono/worker";
+export { createVoskletMonoWorker, supportsWorkerHost } from "monosklet/worker";
 export { startCapture } from "./capture.js";
 export {
   createSpeakerVerifier,
@@ -29,7 +29,7 @@ export { encodeWav } from "./wav.js";
 export { normalizeText, textsMatch, wordOverlap } from "./textMatch.js";
 
 /**
- * Boots the speech engine (a vosklet-mono worker by default), loads the Vosk
+ * Boots the speech engine (a monosklet worker by default), loads the Vosk
  * model, and pairs both with a speaker verifier. The verifier's ONNX model is
  * NOT downloaded here — call warmUp() to prefetch it in the background, or
  * let the first enroll()/verify() trigger it.

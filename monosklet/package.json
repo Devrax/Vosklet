@@ -1,5 +1,5 @@
 {
-  "name": "vosklet-mono",
+  "name": "monosklet",
   "version": "1.0.0",
   "description": "Offline speech recognition for Android WebView and Capacitor apps, wrapping Vosklet (Vosk + WebAssembly) with on-demand local or remote model loading.",
   "type": "module",
@@ -56,7 +56,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Devrax/Vosklet.git",
-    "directory": "vosklet-mono"
+    "directory": "monosklet"
   },
   "license": "MIT"
 }

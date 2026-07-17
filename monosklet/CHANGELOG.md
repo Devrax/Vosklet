@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **vosklet-mono** are documented in this file.
+All notable changes to **monosklet** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-07-17
 
-First stable release. The API surface (`vosklet-mono`,
-`vosklet-mono/singlethread`, `vosklet-mono/worker`) is now considered stable
+First stable release. The API surface (`monosklet`,
+`monosklet/singlethread`, `monosklet/worker`) is now considered stable
 and covered by semantic versioning.
 
 ### Added
@@ -25,7 +25,7 @@ and covered by semantic versioning.
 
 ### Added
 
-- `vosklet-mono/worker` entry with `createVoskletMonoWorker()`: boots the single-thread runtime inside a dedicated Web Worker and proxies the engine API over `postMessage`, keeping recognition off the UI thread. Dedicated workers need no `SharedArrayBuffer`, COOP, or COEP, so this works in Android WebView, Capacitor, and iOS WKWebView. Same API shape as `createVoskletMono()` with three differences: streaming `accept()` is asynchronous, block buffers are transferred to the worker by default (`transfer: false` copies instead), and `dispose()` also terminates the worker. `createTransferer()` still runs on the main thread (workers have no `AudioContext`). `supportsWorkerHost()` is exported for feature detection.
+- `monosklet/worker` entry with `createVoskletMonoWorker()`: boots the single-thread runtime inside a dedicated Web Worker and proxies the engine API over `postMessage`, keeping recognition off the UI thread. Dedicated workers need no `SharedArrayBuffer`, COOP, or COEP, so this works in Android WebView, Capacitor, and iOS WKWebView. Same API shape as `createVoskletMono()` with three differences: streaming `accept()` is asynchronous, block buffers are transferred to the worker by default (`transfer: false` copies instead), and `dispose()` also terminates the worker. `createTransferer()` still runs on the main thread (workers have no `AudioContext`). `supportsWorkerHost()` is exported for feature detection.
 - The vendored Vosklet runtimes now install their API in worker scopes as well (upstream wrapper gate widened from `ENVIRONMENT_IS_WEB` to include `ENVIRONMENT_IS_WORKER`).
 
 ## [0.3.0] - 2026-07-17
@@ -42,7 +42,7 @@ Initial public release.
 ### Added
 
 - `createVoskletMono()` engine factory wrapping the [Vosklet](https://github.com/msqr1/Vosklet) runtimes, with three runtime modes: `singlethread` (default), `threaded`, and `auto`.
-- Slim `vosklet-mono/singlethread` entry point that ships only the single-thread runtime — no `SharedArrayBuffer` or COOP/COEP required, safe for Android WebView, Capacitor, and iOS WKWebView.
+- Slim `monosklet/singlethread` entry point that ships only the single-thread runtime — no `SharedArrayBuffer` or COOP/COEP required, safe for Android WebView, Capacitor, and iOS WKWebView.
 - On-demand model loading via `engine.loadModel({ url, id, storagePath })` from local assets or external URLs, with Cache Storage reuse across app launches.
 - Batch `session.transcribe()` API with `onSegment`/`onProgress` callbacks and cooperative yielding (`yieldEveryBlocks`) to keep the WebView UI responsive.
 - Streaming `session.createRecognizer()` API with `accept()`/`finish()`/`cancel()`, plus optional Vosk JSON `grammar` support in both APIs.
@@ -51,7 +51,7 @@ Initial public release.
 - Resource lifecycle management: `session.unload()` and `engine.dispose()`.
 - Self-contained publish pipeline: Vite build vendors the Vosklet runtimes (loaders, Emscripten glue, and Wasm binaries) into `dist/`, so the package installs with zero dependencies.
 
-[Unreleased]: https://github.com/Devrax/Vosklet/tree/main/vosklet-mono
-[0.4.0]: https://github.com/Devrax/Vosklet/tree/main/vosklet-mono
-[0.3.0]: https://github.com/Devrax/Vosklet/tree/main/vosklet-mono
-[0.2.1]: https://github.com/Devrax/Vosklet/tree/main/vosklet-mono
+[Unreleased]: https://github.com/Devrax/Vosklet/tree/main/monosklet
+[0.4.0]: https://github.com/Devrax/Vosklet/tree/main/monosklet
+[0.3.0]: https://github.com/Devrax/Vosklet/tree/main/monosklet
+[0.2.1]: https://github.com/Devrax/Vosklet/tree/main/monosklet

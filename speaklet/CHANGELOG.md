@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **vosklet-speaker** are documented in this file.
+All notable changes to **speaklet** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -39,8 +39,8 @@ First stable release.
 
 ### Changed
 
-- Self-contained package: the vosklet-mono engine (worker host and
+- Self-contained package: the monosklet engine (worker host and
   single-thread Wasm runtime) is bundled into `dist/mono/` at build time —
-  vosklet-mono is no longer a dependency. The only dependencies are
+  monosklet is no longer a dependency. The only dependencies are
   `onnxruntime-web` and `@jaehyun-ko/speaker-verification`, pinned to exact
   versions.

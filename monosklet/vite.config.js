@@ -25,7 +25,7 @@ function bundleVoskletRuntime() {
   }
 
   return {
-    name: "vosklet-mono:bundle-vosklet-runtime",
+    name: "monosklet:bundle-vosklet-runtime",
     apply: "build",
     async closeBundle() {
       await mkdir(runtimeDir, { recursive: true });

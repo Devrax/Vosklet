@@ -18,7 +18,7 @@ async function importLoader(runtime) {
  *
  * This entry keeps the runtime choice dynamic, so bundlers include BOTH
  * runtimes in the application bundle. Apps committed to the single-thread
- * runtime should import "vosklet-mono/singlethread" instead, which ships
+ * runtime should import "monosklet/singlethread" instead, which ships
  * only that runtime.
  */
 export async function createVoskletMono(options = {}) {

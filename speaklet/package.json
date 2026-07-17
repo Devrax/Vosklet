@@ -1,7 +1,7 @@
 {
-  "name": "vosklet-speaker",
+  "name": "speaklet",
   "version": "1.0.0",
-  "description": "Voice challenge toolkit for the browser: offline speech recognition (bundled vosklet-mono engine) unified with on-device speaker verification (NeXt-TDNN via onnxruntime-web). Microphone capture, enrollment, and verification in one API.",
+  "description": "Vosklet-based voice challenge toolkit for the browser: offline speech recognition (bundled monosklet/Vosklet engine) unified with on-device speaker verification. Microphone capture, enrollment, and verification in one API.",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -18,7 +18,8 @@
     "dist",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "scripts": {
     "build": "vite build",
@@ -31,7 +32,7 @@
   },
   "devDependencies": {
     "vite": "7.3.6",
-    "vosklet-mono": "workspace:*"
+    "monosklet": "workspace:*"
   },
   "keywords": [
     "speech-recognition",
@@ -47,7 +48,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Devrax/Vosklet.git",
-    "directory": "vosklet-speaker"
+    "directory": "speaklet"
   },
   "license": "MIT"
 }

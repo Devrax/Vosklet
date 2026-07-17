@@ -2,25 +2,25 @@ import type {
   LoadModelOptions,
   SpeechMonitorOptions,
   TranscribeResult
-} from "vosklet-mono";
+} from "monosklet";
 import type {
   CreateWorkerOptions,
   WorkerTranscribeOptions
-} from "vosklet-mono/worker";
+} from "monosklet/worker";
 
 // The speech engine is bundled into this package; its factory and the option
-// types apps typically need are re-exported so vosklet-mono itself is never a
+// types apps typically need are re-exported so monosklet itself is never a
 // required install.
-export { createVoskletMonoWorker, supportsWorkerHost } from "vosklet-mono/worker";
-export type { CreateWorkerOptions, WorkerTranscribeOptions } from "vosklet-mono/worker";
+export { createVoskletMonoWorker, supportsWorkerHost } from "monosklet/worker";
+export type { CreateWorkerOptions, WorkerTranscribeOptions } from "monosklet/worker";
 export type {
   LoadModelOptions,
   SpeechMonitorOptions,
   TranscribeResult
-} from "vosklet-mono";
+} from "monosklet";
 
 /**
- * Structural view of a vosklet-mono engine — both createVoskletMono() and
+ * Structural view of a monosklet engine — both createVoskletMono() and
  * createVoskletMonoWorker() results satisfy it.
  */
 export interface SpeechEngine {
@@ -32,7 +32,7 @@ export interface SpeechEngine {
   dispose(): Promise<void>;
 }
 
-/** Structural view of a vosklet-mono model session. */
+/** Structural view of a monosklet model session. */
 export interface SpeechSession {
   transcribe(
     pcm: Float32Array | Iterable<Float32Array>,
@@ -123,7 +123,7 @@ export interface CaptureHandle {
 
 /**
  * Starts capturing one utterance from the microphone through the engine's
- * AudioWorklet transferer and vosklet-mono's speech monitor.
+ * AudioWorklet transferer and monosklet's speech monitor.
  */
 export declare function startCapture(
   engine: SpeechEngine,
@@ -303,7 +303,7 @@ export declare function createSpeakerVerifier(
 // ---------------------------------------------------------------------------
 
 export interface CreateVoskletSpeakerOptions {
-  /** Vosk model to load (tar/tgz archive), as in vosklet-mono loadModel(). */
+  /** Vosk model to load (tar/tgz archive), as in monosklet loadModel(). */
   model: LoadModelOptions;
   /** Reuse an existing engine instead of booting a worker one. */
   engine?: SpeechEngine;
@@ -381,7 +381,7 @@ export interface VoskletSpeaker {
 }
 
 /**
- * Boots the speech engine (a vosklet-mono worker by default), loads the Vosk
+ * Boots the speech engine (a monosklet worker by default), loads the Vosk
  * model, and pairs both with a speaker verifier.
  */
 export declare function createVoskletSpeaker(

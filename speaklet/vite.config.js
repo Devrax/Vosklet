@@ -8,15 +8,15 @@ const packageDir = path.dirname(fileURLToPath(import.meta.url));
 const outDir = path.join(packageDir, "dist");
 const monoDir = path.join(outDir, "mono");
 const require = createRequire(import.meta.url);
-const monoDistDir = path.dirname(require.resolve("vosklet-mono"));
+const monoDistDir = path.dirname(require.resolve("monosklet"));
 
-// Vendors the vosklet-mono engine into dist/mono so the published package is
-// self-contained — no vosklet-mono dependency for consumers. Only the
-// single-thread pieces vosklet-speaker uses are copied; the threaded runtime
+// Vendors the monosklet engine into dist/mono so the published package is
+// self-contained — no monosklet dependency for consumers. Only the
+// single-thread pieces speaklet uses are copied; the threaded runtime
 // (~2.4 MB of wasm) never enters the tarball.
 function vendorVoskletMono() {
   return {
-    name: "vosklet-speaker:vendor-vosklet-mono",
+    name: "speaklet:vendor-monosklet",
     apply: "build",
     async closeBundle() {
       await mkdir(path.join(monoDir, "runtime"), { recursive: true });
@@ -55,8 +55,8 @@ function vendorVoskletMono() {
       await writeFile(
         path.join(outDir, "index.d.ts"),
         declarations
-          .replaceAll('"vosklet-mono/worker"', '"./mono/worker-host.js"')
-          .replaceAll('"vosklet-mono"', '"./mono/index.js"')
+          .replaceAll('"monosklet/worker"', '"./mono/worker-host.js"')
+          .replaceAll('"monosklet"', '"./mono/index.js"')
       );
     }
   };
@@ -77,13 +77,13 @@ export default defineConfig({
       external: [
         "onnxruntime-web",
         "@jaehyun-ko/speaker-verification",
-        "vosklet-mono/worker",
-        "vosklet-mono/singlethread"
+        "monosklet/worker",
+        "monosklet/singlethread"
       ],
       output: {
         paths: {
-          "vosklet-mono/worker": "./mono/worker-host.js",
-          "vosklet-mono/singlethread": "./mono/singlethread.js"
+          "monosklet/worker": "./mono/worker-host.js",
+          "monosklet/singlethread": "./mono/singlethread.js"
         }
       }
     }

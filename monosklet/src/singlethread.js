@@ -12,8 +12,8 @@ export { createSpeechMonitor, getRootMeanSquare } from "./speechMonitor.js";
 export async function createVoskletMono(options = {}) {
   if (options.runtime && options.runtime !== "singlethread") {
     throw new TypeError(
-      `The "vosklet-mono/singlethread" entry only ships the single-thread ` +
-        `runtime; import "vosklet-mono" to use runtime "${options.runtime}".`
+      `The "monosklet/singlethread" entry only ships the single-thread ` +
+        `runtime; import "monosklet" to use runtime "${options.runtime}".`
     );
   }
   return bootEngine(

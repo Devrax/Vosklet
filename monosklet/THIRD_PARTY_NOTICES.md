@@ -1,9 +1,13 @@
 # Third-party notices
 
-vosklet-mono is distributed under the [MIT License](LICENSE). Its published
-`dist/` directory vendors the Vosklet runtime, whose WebAssembly binaries
-compile in the third-party components listed below. All of them are permissive
-licenses; this file preserves their attribution as those licenses request.
+monosklet is distributed under the [MIT License](LICENSE). **monosklet is
+built directly on Vosklet; it is a wrapper and distribution of the Vosklet
+runtime, not an independent speech engine or reimplementation.** Its published
+`dist/` directory vendors Vosklet's WebAssembly runtime from the
+[Devrax/Vosklet](https://github.com/Devrax/Vosklet) fork of
+[msqr1/Vosklet](https://github.com/msqr1/Vosklet). Those binaries compile in
+the third-party components listed below. All of them use permissive licenses;
+this file preserves their attribution as those licenses request.
 
 ## Vosklet
 

@@ -22,12 +22,12 @@ importers:
       onnxruntime-web:
         specifier: 1.16.3
         version: 1.16.3
-      vosklet-mono:
-        specifier: file:../../vosklet-mono/vosklet-mono-1.0.0.tgz
-        version: file:vosklet-mono/vosklet-mono-1.0.0.tgz
-      vosklet-speaker:
-        specifier: file:../../vosklet-speaker/vosklet-speaker-1.0.0.tgz
-        version: file:vosklet-speaker/vosklet-speaker-1.0.0.tgz
+      monosklet:
+        specifier: file:../../monosklet/monosklet-1.0.0.tgz
+        version: file:monosklet/monosklet-1.0.0.tgz
+      speaklet:
+        specifier: file:../../speaklet/speaklet-1.0.0.tgz
+        version: file:speaklet/speaklet-1.0.0.tgz
     devDependencies:
       '@capacitor/cli':
         specifier: latest
@@ -36,7 +36,7 @@ importers:
         specifier: latest
         version: 8.1.5(@types/node@26.1.1)(esbuild@0.28.1)
 
-  vosklet-mono:
+  monosklet:
     devDependencies:
       vite:
         specifier: ^7.0.0
@@ -45,7 +45,7 @@ importers:
         specifier: workspace:*
         version: link:..
 
-  vosklet-speaker:
+  speaklet:
     dependencies:
       '@jaehyun-ko/speaker-verification':
         specifier: 5.0.0
@@ -57,9 +57,9 @@ importers:
       vite:
         specifier: 7.3.6
         version: 7.3.6(@types/node@26.1.1)(lightningcss@1.32.0)
-      vosklet-mono:
+      monosklet:
         specifier: workspace:*
-        version: link:../vosklet-mono
+        version: link:../monosklet
 
 packages:
 
@@ -1082,12 +1082,12 @@ packages:
       yaml:
         optional: true
 
-  vosklet-mono@file:vosklet-mono/vosklet-mono-1.0.0.tgz:
-    resolution: {integrity: sha512-NKiIKV9FBq136gVEVEEIX1YBzk37DJfCzzHszwDhL2y2IShr0ycuhHPNcFISmO8bkohiNkLQhupYlj3Xazysmg==, tarball: file:vosklet-mono/vosklet-mono-1.0.0.tgz}
+  monosklet@file:monosklet/monosklet-1.0.0.tgz:
+    resolution: {integrity: sha512-vcvax+2yvEXYQsEo/cjwBvaWFIEVFryxhnVgf5SSZbkom/U/mBZXvecqg0dfO9khxgj3Om9hVWw1dfKJgL4zDg==, tarball: file:monosklet/monosklet-1.0.0.tgz}
     version: 1.0.0
 
-  vosklet-speaker@file:vosklet-speaker/vosklet-speaker-1.0.0.tgz:
-    resolution: {integrity: sha512-P2Wr1Xil8x8uvKX708cW/B2XhKLOAg9hIZ61M3sKYqrBfa7H48r0qXcYzVgaL0tMIFdQ4aIB9X7/PFa7DIEG6Q==, tarball: file:vosklet-speaker/vosklet-speaker-1.0.0.tgz}
+  speaklet@file:speaklet/speaklet-1.0.0.tgz:
+    resolution: {integrity: sha512-LZY8v6I/NnLWVANUq1I2IhR9Kt+zAu1JD2N2hi6XImzgyx+GxLnRIhh5xOUjMv4AlffN0TduK7gAYPXl+09mCQ==, tarball: file:speaklet/speaklet-1.0.0.tgz}
     version: 1.0.0
 
   which@2.0.2:
@@ -1960,9 +1960,9 @@ snapshots:
       esbuild: 0.28.1
       fsevents: 2.3.3
 
-  vosklet-mono@file:vosklet-mono/vosklet-mono-1.0.0.tgz: {}
+  monosklet@file:monosklet/monosklet-1.0.0.tgz: {}
 
-  vosklet-speaker@file:vosklet-speaker/vosklet-speaker-1.0.0.tgz:
+  speaklet@file:speaklet/speaklet-1.0.0.tgz:
     dependencies:
       '@jaehyun-ko/speaker-verification': 5.0.0(onnxruntime-web@1.16.3)
       onnxruntime-web: 1.16.3

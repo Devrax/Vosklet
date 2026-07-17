@@ -1,8 +1,15 @@
-# vosklet-mono
+# monosklet
 
 Offline speech recognition that runs anywhere a browser or WebView runs — including Android WebView and Capacitor apps, where `SharedArrayBuffer` does not exist.
 
-vosklet-mono is a small, framework-agnostic wrapper around [Vosklet](https://github.com/msqr1/Vosklet) by msqr1 (Vosk + Kaldi compiled to WebAssembly), consumed via the [Devrax/Vosklet](https://github.com/Devrax/Vosklet) fork that adapts it to WebView environments. It is **language-agnostic**: it loads any Vosk model you point it at — a local asset bundled with your app or an external URL — on demand.
+**monosklet is built directly on [Vosklet](https://github.com/msqr1/Vosklet).**
+It is the higher-level npm wrapper in the
+[Devrax/Vosklet](https://github.com/Devrax/Vosklet) fork, not an independent
+speech engine or a reimplementation. The package vendors Vosklet's Vosk +
+Kaldi WebAssembly runtime and adds a framework-agnostic application API suited
+to WebView environments. It is **language-agnostic**: it loads any Vosk model
+you point it at — a local asset bundled with your app or an external URL — on
+demand.
 
 ## Why "mono"?
 
@@ -14,7 +21,7 @@ The name is literal, twice:
 Equally important is what the name does *not* claim:
 
 - It is **not tied to any language**. You choose the Vosk model (Spanish, English, anything from the [Vosk model list](https://alphacephei.com/vosk/models)) per call, at runtime.
-- It is **not an Android port of Vosk** — Vosk already has a native Android SDK, and Vosklet itself ships the single-thread runtime this library uses. vosklet-mono is the ergonomic layer on top: runtime selection, on-demand model loading with caching, a batch `transcribe()` API, and resource lifecycle management.
+- It is **not an Android port of Vosk** — Vosk already has a native Android SDK, and Vosklet itself ships the single-thread runtime this library uses. monosklet is the ergonomic layer on top: runtime selection, on-demand model loading with caching, a batch `transcribe()` API, and resource lifecycle management.
 
 ## Why this exists
 
@@ -27,19 +34,19 @@ This library wraps Vosklet's **single-thread runtime** by default — no special
 - **Cooperative yielding** during recognition so the WebView UI does not freeze on long recordings.
 - **A streaming recognizer** for browsers, and an opt-in switch to Vosklet's threaded runtime when you deploy somewhere that supports it.
 
-## What vosklet-mono does *not* do
+## What monosklet does *not* do
 
-It does **not** capture audio. Your application owns the microphone: request permission, capture mono PCM (`Float32Array` samples in `-1.0..1.0`), decide when recording starts and stops, then pass the blocks to vosklet-mono. This keeps the library agnostic of UI, frameworks, and capture strategy. (A helper for Vosklet's `AudioWorklet` transferer is exposed for convenience — see below.)
+It does **not** capture audio. Your application owns the microphone: request permission, capture mono PCM (`Float32Array` samples in `-1.0..1.0`), decide when recording starts and stops, then pass the blocks to monosklet. This keeps the library agnostic of UI, frameworks, and capture strategy. (A helper for Vosklet's `AudioWorklet` transferer is exposed for convenience — see below.)
 
 ## Install
 
 ```shell
-npm install vosklet-mono
+npm install monosklet
 # or
-pnpm add vosklet-mono
+pnpm add monosklet
 ```
 
-The published package is **self-contained**: the build pipeline bundles the [`Devrax/Vosklet`](https://github.com/Devrax/Vosklet) runtimes (minified loaders, Emscripten glue, and the Wasm binaries) into `dist/`, so installing `vosklet-mono` pulls in no other dependency.
+The published package is **self-contained**: the build pipeline bundles the [`Devrax/Vosklet`](https://github.com/Devrax/Vosklet) runtimes (minified loaders, Emscripten glue, and the Wasm binaries) into `dist/`, so installing `monosklet` pulls in no other dependency.
 
 ### Building the package from source
 
@@ -49,9 +56,9 @@ dependency, so build the Vosklet Wasm runtimes at the repository root first
 
 ```shell
 pnpm install
-pnpm --filter vosklet-mono build          # Vite: bundles + minifies the wrapper, vendors the Vosklet runtime into dist/
-pnpm --filter vosklet-mono pack:check     # list the tarball contents
-pnpm --filter vosklet-mono exec npm pack  # → vosklet-mono-<version>.tgz
+pnpm --filter monosklet build          # Vite: bundles + minifies the wrapper, vendors the Vosklet runtime into dist/
+pnpm --filter monosklet pack:check     # list the tarball contents
+pnpm --filter monosklet exec npm pack  # → monosklet-<version>.tgz
 ```
 
 `npm pack` / `npm publish` run the build automatically through the `prepack` script, so the tarball always ships a fresh `dist/`.
@@ -69,7 +76,7 @@ pnpm --filter vosklet-mono exec npm pack  # → vosklet-mono-<version>.tgz
 3. **Load the engine and a model, capture audio, transcribe:**
 
 ```js
-import { createVoskletMono } from "vosklet-mono/singlethread";
+import { createVoskletMono } from "monosklet/singlethread";
 
 // 1. Load the engine. The /singlethread entry ships ONLY the single-thread
 //    runtime: safe for Android WebView (no COOP/COEP, no SharedArrayBuffer)
@@ -131,7 +138,7 @@ const { text } = await spanish.transcribe(blocks, {
 Most voice UIs want to stop recording by themselves once the user finishes talking. `createSpeechMonitor()` packages that: feed it the same PCM blocks you are capturing and it detects speech, tracks silence, and hands you every captured block the moment the speaker has been quiet long enough:
 
 ```js
-import { createVoskletMono, createSpeechMonitor } from "vosklet-mono/singlethread";
+import { createVoskletMono, createSpeechMonitor } from "monosklet/singlethread";
 
 const monitor = createSpeechMonitor({
   speechThreshold: 0.015,   // RMS level a block must reach to count as speech
@@ -168,7 +175,7 @@ Behavior details:
 
 ## Loading models on demand
 
-`loadModel()` is how you tell vosklet-mono which model to use — per call, at runtime:
+`loadModel()` is how you tell monosklet which model to use — per call, at runtime:
 
 ```js
 // Local asset shipped with the app (offline-first):
@@ -235,13 +242,13 @@ The package has two entry points, and the choice controls your **bundle size**:
 // Slim entry: single-thread only. Bundlers include just one runtime, so the
 // threaded .wasm (~2.4 MB) never enters your app. Use this for Capacitor,
 // Android WebView, iOS, and any deployment without cross-origin isolation.
-import { createVoskletMono } from "vosklet-mono/singlethread";
+import { createVoskletMono } from "monosklet/singlethread";
 const engine = await createVoskletMono();
 
 // Flexible entry: picks the runtime at run time, so bundlers must ship BOTH
 // runtimes (~4.8 MB of .wasm). Use it only when one build genuinely serves
 // isolated and non-isolated environments.
-import { createVoskletMono } from "vosklet-mono";
+import { createVoskletMono } from "monosklet";
 const engine = await createVoskletMono({ runtime: "singlethread" }); // default
 const engine = await createVoskletMono({ runtime: "threaded" });     // needs COOP/COEP + SharedArrayBuffer
 const engine = await createVoskletMono({ runtime: "auto" });         // threaded when supported, else singlethread
@@ -263,10 +270,10 @@ Notes:
 
 ## Running recognition in a Web Worker
 
-The single-thread runtime's one drawback is that it recognizes **on the UI thread**. The `vosklet-mono/worker` entry removes it: the same runtime boots inside a dedicated Web Worker, and the whole API is proxied to it over `postMessage`. Dedicated workers need **no SharedArrayBuffer, COOP, or COEP** — they work in Android WebView, Capacitor, and iOS WKWebView, exactly like the main-thread engine.
+The single-thread runtime's one drawback is that it recognizes **on the UI thread**. The `monosklet/worker` entry removes it: the same runtime boots inside a dedicated Web Worker, and the whole API is proxied to it over `postMessage`. Dedicated workers need **no SharedArrayBuffer, COOP, or COEP** — they work in Android WebView, Capacitor, and iOS WKWebView, exactly like the main-thread engine.
 
 ```js
-import { createVoskletMonoWorker } from "vosklet-mono/worker";
+import { createVoskletMonoWorker } from "monosklet/worker";
 
 const engine = await createVoskletMonoWorker();
 
@@ -296,7 +303,7 @@ What changes compared to the main-thread engine:
 - `dispose()` also terminates the worker; `terminate()` hard-stops it without cleanup.
 - **Native speaker identification is available.** `engine.loadSpkModel({ url, id, storagePath? })` loads a Vosk speaker model (e.g. [vosk-model-spk-0.4](https://alphacephei.com/vosk/models), language-independent, same USTAR TAR packaging as speech models); pass the session as `speakerModel` to `transcribe()` or `createRecognizer()` and results gain `speakerVectors` — one `{ vector, frames }` x-vector per completed utterance. Compare enrolled and probe embeddings (e.g. cosine similarity, frames-weighted average across utterances) to identify the speaker. Cannot be combined with `grammar`.
 
-  The x-vector extractor is compiled into the Wasm runtime the engine already runs, so this is the lightest way to add speaker identification: no onnxruntime-web, no extra JS — just the ~13 MB `vosk-model-spk-0.4` archive next to your speech model. The [`vosklet-speaker`](../vosklet-speaker) toolkit remains the higher-level option (a newer NeXt-TDNN embedding model, plus a ready-made enrollment/verification API) at the cost of bundling an ONNX runtime. As a starting point for the raw x-vectors, treat a frames-weighted cosine similarity of **0.75 or higher** as the same speaker — Vosk's classic ~0.45 cutoff proved too lenient in our testing — and tune the threshold against real recordings from your deployment.
+  The x-vector extractor is compiled into the Wasm runtime the engine already runs, so this is the lightest way to add speaker identification: no onnxruntime-web, no extra JS — just the ~13 MB `vosk-model-spk-0.4` archive next to your speech model. The [`speaklet`](../speaklet) toolkit remains the higher-level option (a newer NeXt-TDNN embedding model, plus a ready-made enrollment/verification API) at the cost of bundling an ONNX runtime. As a starting point for the raw x-vectors, treat a frames-weighted cosine similarity of **0.75 or higher** as the same speaker — Vosk's classic ~0.45 cutoff proved too lenient in our testing — and tune the threshold against real recordings from your deployment.
 
 Bundler notes: the entry ships the literal `new Worker(new URL("./worker.js", import.meta.url))` and `new URL("./runtime/...", import.meta.url)` patterns, which Vite and webpack 5 detect and bundle automatically. For setups that don't, `createVoskletMonoWorker({ workerUrl, glueUrl, wasmUrl })` overrides the URL resolution. The worker script is a classic worker (not a module worker), so it runs in every WebView that has workers at all.
 
@@ -319,7 +326,7 @@ Bundler notes: the entry ships the literal `new Worker(new URL("./worker.js", im
 - [ ] Model archive in your web assets (e.g. `public/models/`) so Capacitor copies it into the app — fully offline recognition.
 - [ ] Bundled model named `*.tar`, **never** `*.tar.gz` — `aapt` strips `.gz` assets at build time and the fetch 404s (see the warning in [Loading models on demand](#loading-models-on-demand)).
 - [ ] `RECORD_AUDIO` (and typically `MODIFY_AUDIO_SETTINGS`) in the Android manifest, plus a runtime permission request before `getUserMedia`.
-- [ ] Import from `vosklet-mono/singlethread` — single-thread is the only runtime a WebView can run, and the slim entry keeps the threaded `.wasm` (~2.4 MB) out of the APK/IPA.
+- [ ] Import from `monosklet/singlethread` — single-thread is the only runtime a WebView can run, and the slim entry keeps the threaded `.wasm` (~2.4 MB) out of the APK/IPA.
 - [ ] Capture first, `transcribe()` after recording ends; drive a progress indicator from `onProgress`.
 - [ ] Free resources: recognizers via `finish()`/`cancel()`, models via `unload()`, everything via `engine.dispose()`.
 - [ ] Debug with Chrome remote inspection (`chrome://inspect`) while the app runs on a device.
@@ -330,11 +337,11 @@ A complete working example — a Spanish voice-challenge Capacitor app using thi
 
 | Member | Description |
 | --- | --- |
-| `createVoskletMono(options?)` | Loads a Vosklet runtime, returns the engine. Options: `runtime`, `logLevel`, `moduleArg`. Also exported by `vosklet-mono/singlethread` (single-thread only, slimmer bundle). |
+| `createVoskletMono(options?)` | Loads a Vosklet runtime, returns the engine. Options: `runtime`, `logLevel`, `moduleArg`. Also exported by `monosklet/singlethread` (single-thread only, slimmer bundle). |
 | `supportsThreadedRuntime()` | `true` when the threaded runtime can run here. |
 | `createSpeechMonitor(options?)` | Energy-based speech monitor: `push(block)` accumulates PCM and fires `onSpeechStart` / `onSpeech` / `onSilence` / `onAutoStop`; `stop()` returns the blocks, `reset()` reuses it. |
-| `createVoskletMonoWorker(options?)` | From `vosklet-mono/worker`: boots the single-thread runtime inside a dedicated Web Worker (no SharedArrayBuffer/COOP/COEP) and returns the same engine API — recognition off the UI thread. |
-| `supportsWorkerHost()` | From `vosklet-mono/worker`: `true` when Web Workers are available. |
+| `createVoskletMonoWorker(options?)` | From `monosklet/worker`: boots the single-thread runtime inside a dedicated Web Worker (no SharedArrayBuffer/COOP/COEP) and returns the same engine API — recognition off the UI thread. |
+| `supportsWorkerHost()` | From `monosklet/worker`: `true` when Web Workers are available. |
 | `engine.loadSpkModel({ url, id, storagePath? })` | Worker engine only: loads a Vosk speaker-identification model; pass the returned session as `speakerModel` to `transcribe()`/`createRecognizer()` for per-utterance x-vectors (`speakerVectors`). |
 | `getRootMeanSquare(samples)` | RMS (0..1) of one PCM block — for level meters or custom detection. |
 | `engine.loadModel({ url, id, storagePath? })` | Loads a model from a local or external URL; returns a `ModelSession`. |

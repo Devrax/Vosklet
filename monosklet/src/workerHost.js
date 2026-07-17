@@ -1,6 +1,6 @@
 /**
  * Worker host: runs the single-thread Vosklet runtime inside a dedicated Web
- * Worker and proxies the vosklet-mono API to it over postMessage. Dedicated
+ * Worker and proxies the monosklet API to it over postMessage. Dedicated
  * workers need no SharedArrayBuffer, COOP, or COEP, so recognition moves off
  * the UI thread in exactly the environments the single-thread runtime
  * targets: Android WebView, Capacitor, and iOS WKWebView.
@@ -467,7 +467,7 @@ class WorkerVoskletMono {
 export async function createVoskletMonoWorker(options = {}) {
   if (!supportsWorkerHost()) {
     throw new Error(
-      "Web Workers are unavailable here; use createVoskletMono() from vosklet-mono/singlethread instead."
+      "Web Workers are unavailable here; use createVoskletMono() from monosklet/singlethread instead."
     );
   }
   const worker = options.workerUrl

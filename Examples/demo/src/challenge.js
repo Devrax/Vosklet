@@ -1,4 +1,4 @@
-import { createVoskletMono, createSpeechMonitor } from "vosklet-mono/singlethread";
+import { createVoskletMono, createSpeechMonitor } from "monosklet/singlethread";
 import "./style.css";
 
 const modelUrl = new URL("/models/es-small.tar", window.location.origin).href;

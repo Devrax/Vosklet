@@ -4,6 +4,12 @@
 
 Vosklet is [Vosk](https://alphacephei.com/vosk/) (Kaldi) compiled to WebAssembly with a browser-facing API: it loads a speech model from a local or remote archive, accepts mono `Float32Array` PCM samples, and returns recognized text. This repository is a fork of [msqr1/Vosklet](https://github.com/msqr1/Vosklet) that solves one specific, painful problem and packages the solution for application developers.
 
+**`monosklet` and `speaklet` are both built on Vosklet.** They are new npm
+package names for higher-level layers in this Vosklet repository, not separate
+or independently implemented speech engines. `monosklet` vendors the Vosklet
+WebAssembly runtime; `speaklet` bundles that same Vosklet-based engine through
+`monosklet` and adds capture and speaker verification.
+
 ## Monorepo index
 
 This repository is a pnpm monorepo. Three packages live here — each layer builds on the one below and ships **self-contained**, so you install only the layer you need — plus the demo apps that exercise the exact packaged artifacts:
@@ -11,17 +17,17 @@ This repository is a pnpm monorepo. Three packages live here — each layer buil
 | Package / app | What it is | Docs |
 | --- | --- | --- |
 | `vosklet` (repository root) | The Wasm runtime itself: Vosk + Kaldi compiled to WebAssembly, in threaded and single-thread (WebView-safe) builds, with bundler-friendly ESM loaders. | [Low-level API](#using-the-low-level-vosklet-package-directly) · [Vosklet.d.ts](Vosklet.d.ts) |
-| [`vosklet-mono/`](vosklet-mono) | The speech-recognition engine library: on-demand model loading with caching, batch `transcribe()` with progress, a streaming recognizer, and a Web Worker host. Vendors the Wasm runtime — no runtime dependencies. | [vosklet-mono/README.md](vosklet-mono/README.md) |
-| [`vosklet-speaker/`](vosklet-speaker) | The voice-challenge toolkit: microphone capture, speech recognition, and on-device speaker verification (NeXt-TDNN via onnxruntime-web) in one API. Bundles the vosklet-mono engine; its only dependencies are exact-pinned `onnxruntime-web` and `@jaehyun-ko/speaker-verification`. | [vosklet-speaker/README.md](vosklet-speaker/README.md) |
+| [`monosklet/`](monosklet) | The speech-recognition engine library: on-demand model loading with caching, batch `transcribe()` with progress, a streaming recognizer, and a Web Worker host. Vendors the Wasm runtime — no runtime dependencies. | [monosklet/README.md](monosklet/README.md) |
+| [`speaklet/`](speaklet) | The voice-challenge toolkit: microphone capture, speech recognition, and on-device speaker verification (NeXt-TDNN via onnxruntime-web) in one API. Bundles the monosklet engine; its only dependencies are exact-pinned `onnxruntime-web` and `@jaehyun-ko/speaker-verification`. | [speaklet/README.md](speaklet/README.md) |
 | [`Examples/demo/`](Examples/demo) | The demo app (Vite + Capacitor, Android and iOS): a home page routing to four Spanish voice-challenge examples — main-thread engine, Web Worker engine, speaker verification, and native Vosk x-vector speaker identification — consuming the packed library tarballs directly. | [Spanish Capacitor demo](#spanish-capacitor-demo) |
 
-Dependency direction: `vosklet` (Wasm runtime) → vendored into `vosklet-mono` (engine library) → bundled into `vosklet-speaker` (toolkit). Nothing is required at install time beyond the package you pick.
+Dependency direction: `vosklet` (Wasm runtime) → vendored into `monosklet` (engine library) → bundled into `speaklet` (toolkit). Nothing is required at install time beyond the package you pick.
 
 ## Test the demos from a fresh clone
 
 The Vosk and NeXt-TDNN models the demos need are deliberately **not
 committed** to this repository. One command bootstraps everything — the
-workspace install, the library builds, the packed `vosklet-speaker` tarball
+workspace install, the library builds, the packed `speaklet` tarball
 the demo consumes, and the model downloads (~79 MB total):
 
 ```shell
@@ -46,15 +52,15 @@ That combination is unavailable in exactly the places hybrid apps live:
 So a stock Capacitor or WebView app simply cannot start the threaded runtime. This fork resolves that with three layers:
 
 1. **A single-thread Wasm runtime** (`Vosklet.single.js` / `Vosklet.single.wasm`): same API, no `SharedArrayBuffer`, no COOP/COEP, runs anywhere a modern WebView runs. Recognition is slower, so the recommended pattern is *capture first, transcribe after recording ends*.
-2. **[`vosklet-mono/`](vosklet-mono)** — a small, framework-agnostic npm library wrapping both runtimes with the ergonomics an app actually needs: on-demand model loading (local asset **or** external URL, cached across launches), a batch `transcribe()` API with progress callbacks for already-captured PCM, a streaming recognizer, and a slim `vosklet-mono/singlethread` entry that keeps the unused threaded runtime's ~2.4 MB `.wasm` out of your app bundle. Start with its [README](vosklet-mono/README.md) if you are building an app.
-3. **[`Examples/demo/`](Examples/demo)** — a working Spanish voice-challenge app (Vite + Capacitor) that builds for Android and iOS and exercises the exact packaged library artifacts. Its home page routes to four examples: the challenge on the main-thread engine, the same challenge with recognition inside a Web Worker (`vosklet-mono/worker`) so the UI thread never blocks, a speaker-verification variant (`vosklet-speaker`) — record a reference voice reading a set text, and when you pass the spoken challenge it tells you how similar your voice sounds to that reference ([NeXt-TDNN](https://github.com/jaehyun-ko/node-speaker-verification) via onnxruntime-web, served locally by the app) — and a native-speaker-identification variant that does the same comparison with Vosk's own x-vector model (`vosk-model-spk-0.4`) attached to the recognizer inside the Web Worker engine, no ONNX runtime involved.
+2. **[`monosklet/`](monosklet)** — a small, framework-agnostic npm library wrapping both runtimes with the ergonomics an app actually needs: on-demand model loading (local asset **or** external URL, cached across launches), a batch `transcribe()` API with progress callbacks for already-captured PCM, a streaming recognizer, and a slim `monosklet/singlethread` entry that keeps the unused threaded runtime's ~2.4 MB `.wasm` out of your app bundle. Start with its [README](monosklet/README.md) if you are building an app.
+3. **[`Examples/demo/`](Examples/demo)** — a working Spanish voice-challenge app (Vite + Capacitor) that builds for Android and iOS and exercises the exact packaged library artifacts. Its home page routes to four examples: the challenge on the main-thread engine, the same challenge with recognition inside a Web Worker (`monosklet/worker`) so the UI thread never blocks, a speaker-verification variant (`speaklet`) — record a reference voice reading a set text, and when you pass the spoken challenge it tells you how similar your voice sounds to that reference ([NeXt-TDNN](https://github.com/jaehyun-ko/node-speaker-verification) via onnxruntime-web, served locally by the app) — and a native-speaker-identification variant that does the same comparison with Vosk's own x-vector model (`vosk-model-spk-0.4`) attached to the recognizer inside the Web Worker engine, no ONNX runtime involved.
 
 ## Which part should I use?
 
 | You are... | Use | Where |
 | --- | --- | --- |
-| Building an app (Capacitor, WebView, or browser) | The `vosklet-mono` wrapper library | [`vosklet-mono/README.md`](vosklet-mono/README.md) |
-| Building a voice challenge with speaker verification | The `vosklet-speaker` toolkit | [`vosklet-speaker/README.md`](vosklet-speaker/README.md) |
+| Building an app (Capacitor, WebView, or browser) | The `monosklet` wrapper library | [`monosklet/README.md`](monosklet/README.md) |
+| Building a voice challenge with speaker verification | The `speaklet` toolkit | [`speaklet/README.md`](speaklet/README.md) |
 | Wanting the raw low-level Vosklet API | The `vosklet` package (`vosklet` / `vosklet/singlethread`) | [Using the low-level package](#using-the-low-level-vosklet-package-directly) |
 | Modifying the C++/Wasm runtime itself | The build script in `src/` | [Build the Wasm runtimes](#step-1--build-the-wasm-runtimes) |
 | Looking for a full working reference | The Spanish challenge demo | [Spanish Capacitor demo](#spanish-capacitor-demo) |
@@ -65,7 +71,7 @@ So a stock Capacitor or WebView app simply cannot start the threaded runtime. Th
 2. `createModel()` fetches a USTAR TAR model archive, expands it in WasmFS, creates a Vosk model, and caches the fetched archive with the supplied model path and ID.
 3. The application captures microphone PCM through an `AudioContext` and an `AudioWorklet`, or supplies PCM from an already-decoded audio file.
 4. A recognizer receives mono `Float32Array` blocks in the range `-1.0` to `1.0`; `finalResult()` flushes the final text.
-5. Applications must delete recognizers and models when they are no longer needed (`vosklet-mono` manages this lifecycle for you).
+5. Applications must delete recognizers and models when they are no longer needed (`monosklet` manages this lifecycle for you).
 
 ## Requirements
 
@@ -74,9 +80,9 @@ So a stock Capacitor or WebView app simply cannot start the threaded runtime. Th
 - A modern browser or WebView in a secure context (`https://`, `http://localhost`, or a Capacitor app scheme).
 - WebAssembly, `fetch`, Cache Storage, `AudioContext`, and microphone permission for microphone flows.
 - `AudioWorklet` for direct microphone PCM capture.
-- A Vosk model packaged as a USTAR TAR archive, either uncompressed (`.tar`) or gzip-compressed (`.tar.gz` / `.tgz`). Format detection uses the bytes, not the URL extension. **Models bundled inside an Android app must be plain `.tar`** — Android's asset packager strips `.gz` assets at build time (explained in the [vosklet-mono README](vosklet-mono/README.md#loading-models-on-demand)).
+- A Vosk model packaged as a USTAR TAR archive, either uncompressed (`.tar`) or gzip-compressed (`.tar.gz` / `.tgz`). Format detection uses the bytes, not the URL extension. **Models bundled inside an Android app must be plain `.tar`** — Android's asset packager strips `.gz` assets at build time (explained in the [monosklet README](monosklet/README.md#loading-models-on-demand)).
 
-Only the threaded runtime additionally requires `SharedArrayBuffer` and cross-origin isolation (COOP/COEP headers). The single-thread runtime — the default in `vosklet-mono` — has no isolation requirements.
+Only the threaded runtime additionally requires `SharedArrayBuffer` and cross-origin isolation (COOP/COEP headers). The single-thread runtime — the default in `monosklet` — has no isolation requirements.
 
 ### Building everything from source
 
@@ -129,7 +135,7 @@ VOSKLET_MODE=singlethread OUTPUT_BASENAME=Vosklet.single ./make
 cd ..
 ```
 
-Build both if you plan to package `vosklet-mono`, since it vendors both runtimes. Accepted environment variables:
+Build both if you plan to package `monosklet`, since it vendors both runtimes. Accepted environment variables:
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
@@ -144,23 +150,23 @@ If a dependency must be rebuilt, remove its generated directory at the repositor
 
 ### Step 2 — Package the libraries
 
-The repository is a pnpm workspace: `vosklet-mono` consumes the repository root (`vosklet`) as a `workspace:*` dev dependency and vendors the runtimes you built in Step 1 into its `dist/`; `vosklet-speaker` bundles vosklet-mono's engine into its own `dist/` the same way. Both tarballs are **self-contained**:
+The repository is a pnpm workspace: `monosklet` consumes the repository root (`vosklet`) as a `workspace:*` dev dependency and vendors the runtimes you built in Step 1 into its `dist/`; `speaklet` bundles monosklet's engine into its own `dist/` the same way. Both tarballs are **self-contained**:
 
 ```shell
 pnpm install
-pnpm run build:packages                     # vite builds: vosklet-mono, then vosklet-speaker
-pnpm --filter vosklet-mono exec npm pack    # → vosklet-mono/vosklet-mono-<version>.tgz
-pnpm run pack:speaker                       # → vosklet-speaker/vosklet-speaker-<version>.tgz
+pnpm run build:packages                     # vite builds: monosklet, then speaklet
+pnpm --filter monosklet exec npm pack    # → monosklet/monosklet-<version>.tgz
+pnpm run pack:speaklet                       # → speaklet/speaklet-<version>.tgz
 ```
 
 Sanity checks along the way:
 
 ```shell
-pnpm --filter vosklet-mono pack:check       # list a tarball's contents without writing it
-pnpm --filter vosklet-speaker pack:check
+pnpm --filter monosklet pack:check       # list a tarball's contents without writing it
+pnpm --filter speaklet pack:check
 ```
 
-The tarballs are what you would `npm publish` (or install directly from the file path / a git URL). vosklet-mono ships three entry points — `vosklet-mono` (runtime selectable), `vosklet-mono/singlethread` (slim, WebView-first), and `vosklet-mono/worker` — plus type declarations and third-party license notices; vosklet-speaker ships the full voice-challenge toolkit with the engine bundled in.
+The tarballs are what you would `npm publish` (or install directly from the file path / a git URL). monosklet ships three entry points — `monosklet` (runtime selectable), `monosklet/singlethread` (slim, WebView-first), and `monosklet/worker` — plus type declarations and third-party license notices; speaklet ships the full voice-challenge toolkit with the engine bundled in.
 
 ### Step 3 — Get a model
 
@@ -177,11 +183,11 @@ Bundle the `.tar` in your app's web assets, or host it (uncompressed or `.tar.gz
 ### Step 4 — Consume it in your app
 
 ```shell
-npm install ./vosklet-mono/vosklet-mono-1.0.0.tgz    # or from npm once published
+npm install ./monosklet/monosklet-1.0.0.tgz    # or from npm once published
 ```
 
 ```js
-import { createVoskletMono } from "vosklet-mono/singlethread";
+import { createVoskletMono } from "monosklet/singlethread";
 
 const engine = await createVoskletMono();
 const session = await engine.loadModel({
@@ -191,7 +197,7 @@ const session = await engine.loadModel({
 const { text } = await session.transcribe(capturedPcmBlocks, { sampleRate });
 ```
 
-The [vosklet-mono README](vosklet-mono/README.md) covers microphone capture, model swapping, grammar constraints, runtime selection, and the Android/iOS checklists.
+The [monosklet README](monosklet/README.md) covers microphone capture, model swapping, grammar constraints, runtime selection, and the Android/iOS checklists.
 
 ### Step 5 — Verify with the demo (optional but recommended)
 
@@ -224,8 +230,8 @@ cd Examples/demo/android
 After rebuilding the Wasm runtimes (Step 1), repeat Step 2 and reinstall so everything picks up the fresh artifacts:
 
 ```shell
-pnpm --filter vosklet-mono exec npm pack
-pnpm run pack:speaker
+pnpm --filter monosklet exec npm pack
+pnpm run pack:speaklet
 pnpm install
 ```
 
@@ -275,9 +281,9 @@ For direct microphone PCM, connect `AudioContext.createMediaStreamSource()` to `
 
 The demo serves a local Spanish model from `Examples/demo/public/models/es-small.tar` — not committed to the repository; `pnpm run fetch:models` downloads and repackages it there. Vite serves it as `/models/es-small.tar`, then Capacitor copies it into the Android and iOS web assets, so recognition is fully offline.
 
-It consumes the packaged libraries — `vosklet-mono` and `vosklet-speaker` as `file:` tarballs — exercising the exact artifacts that would be published to npm. Each example page has its own entry (`challenge/`, `worker/`, `speaker/`, `spk/`), so a page only loads the engine it demonstrates and the threaded runtime's `.wasm` stays out of the bundle entirely.
+It consumes the packaged libraries — `monosklet` and `speaklet` as `file:` tarballs — exercising the exact artifacts that would be published to npm. Each example page has its own entry (`challenge/`, `worker/`, `speaker/`, `spk/`), so a page only loads the engine it demonstrates and the threaded runtime's `.wasm` stays out of the bundle entirely.
 
-The `spk/` example demonstrates the native Vosk speaker-identification path on the Web Worker engine: it loads the language-independent x-vector model (`vosk-model-spk-0.4`, served locally as `/models/spk-0.4.tar`) with `engine.loadSpkModel()` from `vosklet-mono/worker` and passes the session as `speakerModel` to `session.transcribe()`. Results then carry `speakerVectors` — one 128-dimension embedding per utterance, computed inside the worker — and the page compares the enrolled and spoken embeddings by cosine similarity — useful for testing how well the stock Vosk x-vectors separate Spanish speakers without any ONNX dependency.
+The `spk/` example demonstrates the native Vosk speaker-identification path on the Web Worker engine: it loads the language-independent x-vector model (`vosk-model-spk-0.4`, served locally as `/models/spk-0.4.tar`) with `engine.loadSpkModel()` from `monosklet/worker` and passes the session as `speakerModel` to `session.transcribe()`. Results then carry `speakerVectors` — one 128-dimension embedding per utterance, computed inside the worker — and the page compares the enrolled and spoken embeddings by cosine similarity — useful for testing how well the stock Vosk x-vectors separate Spanish speakers without any ONNX dependency.
 
 Platform notes:
 
@@ -296,8 +302,8 @@ The demo only uses those PCM measurements to decide when to stop recording. Capt
 ```shell
 # Libraries: rebuild and inspect the tarball file lists
 pnpm run build:packages
-pnpm --filter vosklet-mono pack:check
-pnpm --filter vosklet-speaker pack:check
+pnpm --filter monosklet pack:check
+pnpm --filter speaklet pack:check
 
 # Browser demo build
 pnpm run demo:build
@@ -319,15 +325,15 @@ cd Examples/demo/ios/App && xcodebuild -project App.xcodeproj -scheme App -sdk i
 | `Vosklet.js`, `Vosklet.wasm` | Generated default threaded runtime. |
 | `Vosklet.single.js`, `Vosklet.single.wasm` | Generated single-thread Android/WebView runtime. |
 | `index.mjs`, `index.single.mjs` | ESM loaders that resolve generated assets safely through bundlers. |
-| `vosklet-mono/` | Consumer-facing npm wrapper library (on-demand models, batch transcription, WebView-safe by default). |
-| `vosklet-speaker/` | Voice-challenge toolkit: capture + recognition + speaker verification, with the vosklet-mono engine bundled in. |
+| `monosklet/` | Consumer-facing npm wrapper library (on-demand models, batch transcription, WebView-safe by default). |
+| `speaklet/` | Voice-challenge toolkit: capture + recognition + speaker verification, with the monosklet engine bundled in. |
 | `Examples/` | Standalone HTML usage examples. |
 | `Examples/demo/` | The demo app (Vite + Capacitor): home page routing to the main-thread, Web Worker, speaker-verification, and x-vector speaker-identification examples. |
 
 ## Further documentation
 
-- [vosklet-mono library README](vosklet-mono/README.md)
-- [vosklet-speaker toolkit README](vosklet-speaker/README.md)
+- [monosklet library README](monosklet/README.md)
+- [speaklet toolkit README](speaklet/README.md)
 - [Type declarations](Vosklet.d.ts)
-- [License](LICENSE) — MIT, with [third-party notices](vosklet-mono/THIRD_PARTY_NOTICES.md) for the compiled-in components
+- [License](LICENSE) — MIT, with [third-party notices](monosklet/THIRD_PARTY_NOTICES.md) for the compiled-in components
 - Upstream project: [msqr1/Vosklet](https://github.com/msqr1/Vosklet)
