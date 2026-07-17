@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#153b38" />
+    <title>Reto de voz (verificación de hablante)</title>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="masthead">
+        <p class="eyebrow">Vosklet local · Web Worker · Verificación de hablante</p>
+        <h1>Reto de voz</h1>
+        <p id="status" class="status" role="status">Preparando el modelo local...</p>
+      </header>
+
+      <section class="reference" aria-labelledby="reference-label">
+        <p id="reference-label" class="eyebrow">Voz de referencia</p>
+        <p id="referenceState" class="recording-state">Comprobando...</p>
+        <blockquote id="referenceText" class="reference-text" hidden></blockquote>
+        <div class="reference-controls">
+          <button id="enrollButton" class="record-button enroll-button" type="button" disabled>Grabar voz de referencia</button>
+        </div>
+      </section>
+
+      <section class="challenge" aria-labelledby="challenge-label">
+        <label id="challenge-label" for="challengeText">Reto escrito</label>
+        <textarea id="challengeText" rows="3" spellcheck="true">La práctica constante mejora la pronunciación.</textarea>
+      </section>
+
+      <section class="recording" aria-label="Grabación de respuesta">
+        <div class="recording-controls">
+          <button id="startButton" class="record-button" type="button" disabled>Hablar</button>
+          <button id="stopButton" class="record-button stop-button" type="button" disabled>Detener</button>
+        </div>
+        <p id="recordingState" class="recording-state">Modelo local listo</p>
+      </section>
+
+      <section class="transcript-section" aria-labelledby="transcript-label">
+        <p id="transcript-label" class="eyebrow">Texto reconocido</p>
+        <output id="transcript" class="transcript" aria-live="polite">Aún no hay una respuesta.</output>
+        <p id="similarity" class="similarity" aria-live="polite" hidden></p>
+      </section>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
