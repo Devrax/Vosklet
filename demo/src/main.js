@@ -4,6 +4,10 @@ import "./style.css";
 const modelUrl = new URL("/models/es-small.tar", window.location.origin).href;
 const modelStorePath = "Spanish";
 const modelId = "vosk-model-small-es-0.42";
+const recordingOptions = {
+  stopAfterSpoken: 1_500,
+  speechThreshold: 0.015
+};
 
 const challengeText = document.querySelector("#challengeText");
 const startButton = document.querySelector("#startButton");
@@ -23,6 +27,8 @@ let capturedAudio = [];
 let preparing = false;
 let recording = false;
 let processing = false;
+let hasSpoken = false;
+let lastSpeechAt = 0;
 
 function debug(event, details = {}) {
   console.info("[Vosklet Challenge]", event, details);
@@ -33,6 +39,49 @@ function parseResult(detail) {
     return (JSON.parse(detail).text || "").trim();
   } catch {
     return (detail || "").trim();
+  }
+}
+
+function getRootMeanSquare(samples) {
+  let sumOfSquares = 0;
+  for (const sample of samples) {
+    sumOfSquares += sample * sample;
+  }
+  return Math.sqrt(sumOfSquares / samples.length);
+}
+
+function getAutoStopDelay() {
+  const { stopAfterSpoken } = recordingOptions;
+  return Number.isFinite(stopAfterSpoken) && stopAfterSpoken >= 0
+    ? stopAfterSpoken
+    : undefined;
+}
+
+function captureAudio(samples) {
+  if (!recording) {
+    return;
+  }
+
+  capturedAudio.push(samples);
+  const rms = getRootMeanSquare(samples);
+  const now = performance.now();
+
+  if (rms >= recordingOptions.speechThreshold) {
+    if (!hasSpoken) {
+      debug("speech-detected", { rms, threshold: recordingOptions.speechThreshold });
+    }
+    hasSpoken = true;
+    lastSpeechAt = now;
+    return;
+  }
+
+  const autoStopDelay = getAutoStopDelay();
+  if (hasSpoken && autoStopDelay !== undefined && now - lastSpeechAt >= autoStopDelay) {
+    debug("recording-auto-stop", {
+      silentMilliseconds: Math.round(now - lastSpeechAt),
+      stopAfterSpoken: autoStopDelay
+    });
+    void finishRecording();
   }
 }
 
@@ -135,11 +184,9 @@ async function startRecording() {
     );
     debug("transferer-ready");
     capturedAudio = [];
-    transferer.port.onmessage = (audioEvent) => {
-      if (recording) {
-        capturedAudio.push(audioEvent.data);
-      }
-    };
+    hasSpoken = false;
+    lastSpeechAt = 0;
+    transferer.port.onmessage = (audioEvent) => captureAudio(audioEvent.data);
     microphoneNode.connect(transferer);
     recording = true;
     debug("recording-started", {
