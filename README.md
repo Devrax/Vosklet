@@ -168,6 +168,30 @@ pnpm --filter speaklet pack:check
 
 The tarballs are what you would `npm publish` (or install directly from the file path / a git URL). monosklet ships three entry points — `monosklet` (runtime selectable), `monosklet/singlethread` (slim, WebView-first), and `monosklet/worker` — plus type declarations and third-party license notices; speaklet ships the full voice-challenge toolkit with the engine bundled in.
 
+#### Automated npm releases
+
+[`build-npm-tarballs.yml`](.github/workflows/build-npm-tarballs.yml) builds,
+validates, checksums, and uploads both npm tarballs for pull requests, `main`,
+`release/**`, and manual runs. [`npm-publish.yml`](.github/workflows/npm-publish.yml)
+calls that same workflow for a release tag, downloads the resulting
+`npm-tarballs` artifact, verifies its checksums, and publishes `monosklet`
+followed by `speaklet`.
+
+The tag version must exactly match both package manifests. This repository
+already has a historical `1.0.0` tag for the original Vosklet runtime, so the
+first `monosklet` and `speaklet` release must use the new tag `v1.0.0`. The
+optional `v` is removed during validation, and both npm packages are still
+published as version `1.0.0`.
+
+The publish job targets the GitHub environment named `NPM_TOKEN` and reads its
+environment secret of the same name. To publish the first release after the
+release commit is pushed:
+
+```shell
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ### Step 3 — Get a model
 
 For the demo apps this step is automated — `pnpm run fetch:models` downloads and repackages everything the demos need (the models are deliberately kept out of the repository). For your own app: download a model for your language from [alphacephei.com/vosk/models](https://alphacephei.com/vosk/models) and repackage the `.zip` as a USTAR TAR:
