@@ -1,6 +1,6 @@
 {
   "name": "monosklet",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Offline speech recognition for Android WebView and Capacitor apps, wrapping Vosklet (Vosk + WebAssembly) with on-demand local or remote model loading.",
   "type": "module",
   "main": "./dist/index.js",

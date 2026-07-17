@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-07-17
+
+### Changed
+
+- Reorganized the README around npm consumer onboarding: entry-point selection,
+  a worker-first quick start, complete microphone capture, common recipes, and
+  a grouped API guide.
+- Clarified the distinction between raw native Vosk speaker x-vectors and
+  speaklet's higher-level NeXt-TDNN enrollment and verification API.
+
 ## [1.0.0] - 2026-07-17
 
 First stable release. The API surface (`monosklet`,
@@ -52,6 +62,8 @@ Initial public release.
 - Self-contained publish pipeline: Vite build vendors the Vosklet runtimes (loaders, Emscripten glue, and Wasm binaries) into `dist/`, so the package installs with zero dependencies.
 
 [Unreleased]: https://github.com/Devrax/Vosklet/tree/main/monosklet
+[1.0.1]: https://github.com/Devrax/Vosklet/releases/tag/v1.0.1
+[1.0.0]: https://github.com/Devrax/Vosklet/releases/tag/v1.0.0
 [0.4.0]: https://github.com/Devrax/Vosklet/tree/main/monosklet
 [0.3.0]: https://github.com/Devrax/Vosklet/tree/main/monosklet
 [0.2.1]: https://github.com/Devrax/Vosklet/tree/main/monosklet

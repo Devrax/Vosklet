@@ -1,6 +1,6 @@
 {
   "name": "speaklet",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Vosklet-based voice challenge toolkit for the browser: offline speech recognition (bundled monosklet/Vosklet engine) unified with on-device speaker verification. Microphone capture, enrollment, and verification in one API.",
   "type": "module",
   "main": "./dist/index.js",

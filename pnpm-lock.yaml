@@ -19,15 +19,15 @@ importers:
       '@capacitor/ios':
         specifier: ^8.4.2
         version: 8.4.2(@capacitor/core@8.4.2)
+      monosklet:
+        specifier: file:../../monosklet/monosklet-1.0.1.tgz
+        version: file:monosklet/monosklet-1.0.1.tgz
       onnxruntime-web:
         specifier: 1.16.3
         version: 1.16.3
-      monosklet:
-        specifier: file:../../monosklet/monosklet-1.0.0.tgz
-        version: file:monosklet/monosklet-1.0.0.tgz
       speaklet:
-        specifier: file:../../speaklet/speaklet-1.0.0.tgz
-        version: file:speaklet/speaklet-1.0.0.tgz
+        specifier: file:../../speaklet/speaklet-1.0.1.tgz
+        version: file:speaklet/speaklet-1.0.1.tgz
     devDependencies:
       '@capacitor/cli':
         specifier: latest
@@ -54,12 +54,12 @@ importers:
         specifier: 1.16.3
         version: 1.16.3
     devDependencies:
-      vite:
-        specifier: 7.3.6
-        version: 7.3.6(@types/node@26.1.1)(lightningcss@1.32.0)
       monosklet:
         specifier: workspace:*
         version: link:../monosklet
+      vite:
+        specifier: 7.3.6
+        version: 7.3.6(@types/node@26.1.1)(lightningcss@1.32.0)
 
 packages:
 
@@ -833,6 +833,10 @@ packages:
     resolution: {integrity: sha512-KZxYo1BUkWD2TVFLr0MQoM8vUUigWD3LlD83a/75BqC+4qE0Hb1Vo5v1FgcfaNXvfXzr+5EhQ6ing/CaBijTlw==}
     engines: {node: '>= 18'}
 
+  monosklet@file:monosklet/monosklet-1.0.1.tgz:
+    resolution: {integrity: sha512-ABatz++geNO1k1NbwI66diXxs3eQo3N1x2HF7ixn5PuqC8AkbzdGRXZyQ3Ns/m5nMgRBTfvRKEfQskxh05OVJg==, tarball: file:monosklet/monosklet-1.0.1.tgz}
+    version: 1.0.1
+
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
@@ -951,6 +955,10 @@ packages:
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
+
+  speaklet@file:speaklet/speaklet-1.0.1.tgz:
+    resolution: {integrity: sha512-5We7UcfZHABM5YhJeAHKj6tXmUeTXjx1PTH37JxWRdg7xSolJ0FkUTmhWrNubDAtdp/Pl+CANJc8SOuQElwXfw==, tarball: file:speaklet/speaklet-1.0.1.tgz}
+    version: 1.0.1
 
   split2@4.2.0:
     resolution: {integrity: sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==}
@@ -1081,14 +1089,6 @@ packages:
         optional: true
       yaml:
         optional: true
-
-  monosklet@file:monosklet/monosklet-1.0.0.tgz:
-    resolution: {integrity: sha512-vcvax+2yvEXYQsEo/cjwBvaWFIEVFryxhnVgf5SSZbkom/U/mBZXvecqg0dfO9khxgj3Om9hVWw1dfKJgL4zDg==, tarball: file:monosklet/monosklet-1.0.0.tgz}
-    version: 1.0.0
-
-  speaklet@file:speaklet/speaklet-1.0.0.tgz:
-    resolution: {integrity: sha512-LZY8v6I/NnLWVANUq1I2IhR9Kt+zAu1JD2N2hi6XImzgyx+GxLnRIhh5xOUjMv4AlffN0TduK7gAYPXl+09mCQ==, tarball: file:speaklet/speaklet-1.0.0.tgz}
-    version: 1.0.0
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -1716,6 +1716,8 @@ snapshots:
     dependencies:
       minipass: 7.1.3
 
+  monosklet@file:monosklet/monosklet-1.0.1.tgz: {}
+
   ms@2.1.3: {}
 
   nanoid@3.3.16: {}
@@ -1890,6 +1892,11 @@ snapshots:
 
   source-map-js@1.2.1: {}
 
+  speaklet@file:speaklet/speaklet-1.0.1.tgz:
+    dependencies:
+      '@jaehyun-ko/speaker-verification': 5.0.0(onnxruntime-web@1.16.3)
+      onnxruntime-web: 1.16.3
+
   split2@4.2.0: {}
 
   string-width@4.2.3:
@@ -1959,13 +1966,6 @@ snapshots:
       '@types/node': 26.1.1
       esbuild: 0.28.1
       fsevents: 2.3.3
-
-  monosklet@file:monosklet/monosklet-1.0.0.tgz: {}
-
-  speaklet@file:speaklet/speaklet-1.0.0.tgz:
-    dependencies:
-      '@jaehyun-ko/speaker-verification': 5.0.0(onnxruntime-web@1.16.3)
-      onnxruntime-web: 1.16.3
 
   which@2.0.2:
     dependencies:
