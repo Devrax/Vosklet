@@ -13,3 +13,5 @@ Examples/*/dist
 Examples/demo/models/
 Examples/demo/public/models/
 node_modules/
+.pnpm/
+.pnpm-store/

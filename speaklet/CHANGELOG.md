@@ -7,16 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-07-17
+## [1.0.1] - 2026-07-17
 
-### Added
+### Changed
 
-- Optional enrollment-audio persistence: `enroll(audio, { persist: true })`
-  keeps the enrollment WAV in Cache Storage (best-effort; embedding-only
-  behavior stays the default). New `loadEnrollmentAudio(id?)` and
-  `clearEnrollmentAudio(id?)` on both the verifier and the suite;
-  `clearReference()` / `clearAllReferences()` also remove any persisted
-  audio for the speakers they clear.
+- Reorganized the README around first-time npm use, moving the required ONNX
+  Runtime assets and bundler configuration before the quick start.
+- Added a complete two-recording enrollment and verification example, resource
+  cleanup, privacy guidance, and a quick guide to the high- and low-level APIs.
+- Made the NeXt-TDNN convenience path and the optional native Vosk x-vector
+  path explicit.
 
 ## [1.0.0] - 2026-07-17
 
@@ -36,6 +36,12 @@ First stable release.
 - À-la-carte exports: `startCapture()`, `createSpeakerVerifier()`,
   `encodeWav()`, `normalizeText()` / `textsMatch()` / `wordOverlap()`, and
   the bundled engine's `createVoskletMonoWorker()` / `supportsWorkerHost()`.
+- Optional enrollment-audio persistence: `enroll(audio, { persist: true })`
+  keeps the enrollment WAV in Cache Storage (best-effort; embedding-only
+  behavior stays the default). New `loadEnrollmentAudio(id?)` and
+  `clearEnrollmentAudio(id?)` on both the verifier and the suite;
+  `clearReference()` / `clearAllReferences()` also remove any persisted
+  audio for the speakers they clear.
 
 ### Changed
 
@@ -44,3 +50,7 @@ First stable release.
   monosklet is no longer a dependency. The only dependencies are
   `onnxruntime-web` and `@jaehyun-ko/speaker-verification`, pinned to exact
   versions.
+
+[Unreleased]: https://github.com/Devrax/Vosklet/tree/main/speaklet
+[1.0.1]: https://github.com/Devrax/Vosklet/releases/tag/v1.0.1
+[1.0.0]: https://github.com/Devrax/Vosklet/releases/tag/v1.0.0
