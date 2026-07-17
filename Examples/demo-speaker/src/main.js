@@ -18,10 +18,10 @@ const recordingOptions = {
   speechThreshold: 0.015
 };
 
-// Enrollment: one phonetically rich sentence (~8 s spoken) — short enough to
-// read comfortably, long enough for a stable reference embedding.
+// Enrollment: one sentence, ~8 s spoken — comfortable to read in one take,
+// and long enough audio for a stable reference embedding.
 const enrollmentText =
-  "Confirmo, acepto y autorizo que esta es mi voz";
+  "Confirmo, acepto y autorizo que esta es mi voz, y la registro con calma y claridad como referencia única para verificar mi identidad";
 
 // Reading a paragraph has natural pauses at the periods, so give the
 // auto-stop more slack during enrollment than during the short challenge.
