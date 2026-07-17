@@ -8,7 +8,19 @@ if (ENVIRONMENT_IS_WEB) {
   // 'var' to expose this outside the if
   var objs = [];
   var events = ['status', 'partialResult', 'result'];
-  let _cache = caches.open('Vosklet');
+  // The Cache API only accepts http(s) request URLs. On custom app schemes
+  // (e.g. capacitor://localhost in iOS WKWebView) every cache operation
+  // throws "Request url is not HTTP/HTTPS", so probe once and fall back to
+  // uncached fetches when the cache is unusable on this origin.
+  let _cache = (async () => {
+    try {
+      let cache = await caches.open('Vosklet');
+      await cache.keys('vosklet-cache-probe', { ignoreSearch: true });
+      return cache;
+    } catch {
+      return null;
+    }
+  })();
   let gzipMagic = [0x1f, 0x8b];
   let ustarMagic = [0x75, 0x73, 0x74, 0x61, 0x72];
   let hasGzipMagic = bytes => bytes.length > 1 && bytes[0] == gzipMagic[0] && bytes[1] == gzipMagic[1];
@@ -71,18 +83,27 @@ if (ENVIRONMENT_IS_WEB) {
           else reject(ev.detail);
         }, { once: true });
       });
-      let cache = await caches.open('Vosklet');
-      let req = (await cache.keys(storepath, { ignoreSearch: true }))[0];
+      let cache = await _cache;
       let res;
-      if (typeof req == 'undefined' || req.url.split('?')[1] != id) {
+      if (cache) {
+        let req = (await cache.keys(storepath, { ignoreSearch: true }))[0];
+        if (typeof req != 'undefined' && req.url.split('?')[1] == id)
+          res = await cache.match(req);
+      }
+      if (!res) {
 
-        // Caching already handled explicitly 
+        // Caching already handled explicitly
         res = await fetch(url, { cache: 'no-store' });
         if (!res.ok) throw 'Unable to fetch model, status: ' + res.status;
         res = new Response(await toTarBytes(new Uint8Array(await res.arrayBuffer()), url));
-        await cache.put(storepath + '?' + id, res.clone());
+        if (cache) {
+          try {
+            await cache.put(storepath + '?' + id, res.clone());
+          } catch {
+            // A failed cache write (quota, private mode) must not block model creation.
+          }
+        }
       }
-      else res = await cache.match(req);
       let tar = await res.arrayBuffer();
       let tarStart = _malloc(tar.byteLength);
       HEAPU8.set(new Uint8Array(tar), tarStart);

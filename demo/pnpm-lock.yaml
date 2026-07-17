@@ -14,9 +14,12 @@ importers:
       '@capacitor/core':
         specifier: latest
         version: 8.4.2
-      vosklet:
-        specifier: file:..
-        version: file:..
+      '@capacitor/ios':
+        specifier: ^8.4.2
+        version: 8.4.2(@capacitor/core@8.4.2)
+      vosklet-mono:
+        specifier: file:../vosklet-mono/vosklet-mono-0.2.1.tgz
+        version: file:../vosklet-mono/vosklet-mono-0.2.1.tgz
     devDependencies:
       '@capacitor/cli':
         specifier: latest
@@ -39,6 +42,11 @@ packages:
 
   '@capacitor/core@8.4.2':
     resolution: {integrity: sha512-fQPRb3JXRaU2pnufDUvqOjhsrYxDQeFRZyaj/sHydIUxD2NxOGHKMpmKUdI+U4OOmKuGZyvRpi7TSJU+7Bjbmg==}
+
+  '@capacitor/ios@8.4.2':
+    resolution: {integrity: sha512-ClVzIjK++yRjsRPOpdEzhsZfbHfoEc0f4M6vD0v7sWh0qcoF6NkxNAeHpWTn4OPJpJfpGGoYsq+IfEHrYyBiWA==}
+    peerDependencies:
+      '@capacitor/core': ^8.4.0
 
   '@emnapi/core@1.11.1':
     resolution: {integrity: sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ==}
@@ -640,8 +648,9 @@ packages:
       yaml:
         optional: true
 
-  vosklet@file:..:
-    resolution: {directory: .., type: directory}
+  vosklet-mono@file:../vosklet-mono/vosklet-mono-0.2.1.tgz:
+    resolution: {integrity: sha512-moNF+3YJ2u6cvEY+C/L/hLBXKaq9WZMD9UAHu4/WM4Gk19eaAmPY2/KN/qOxMi4DKSPKoBUa0VFzDPPY3ROWaw==, tarball: file:../vosklet-mono/vosklet-mono-0.2.1.tgz}
+    version: 0.2.1
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -702,6 +711,10 @@ snapshots:
   '@capacitor/core@8.4.2':
     dependencies:
       tslib: 2.8.1
+
+  '@capacitor/ios@8.4.2(@capacitor/core@8.4.2)':
+    dependencies:
+      '@capacitor/core': 8.4.2
 
   '@emnapi/core@1.11.1':
     dependencies:
@@ -1223,7 +1236,7 @@ snapshots:
       '@types/node': 26.1.1
       fsevents: 2.3.3
 
-  vosklet@file:..: {}
+  vosklet-mono@file:../vosklet-mono/vosklet-mono-0.2.1.tgz: {}
 
   which@2.0.2:
     dependencies:

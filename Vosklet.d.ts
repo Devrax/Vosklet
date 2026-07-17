@@ -35,7 +35,8 @@ export interface Module {
     bufferSize: number
   ): Promise<AudioWorkletNode>;
   cleanUp(): Promise<void>;
-  getModelCache(): Promise<Cache>;
+  /** Resolves null when the Cache API is unusable on the current origin (e.g. capacitor:// on iOS). */
+  getModelCache(): Promise<Cache | null>;
   EpMode: EpMode;
 }
 

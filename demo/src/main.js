@@ -1,4 +1,4 @@
-import { loadVosklet } from "vosklet/singlethread";
+import { createVoskletMono } from "vosklet-mono/singlethread";
 import "./style.css";
 
 const modelUrl = new URL("/models/es-small.tar", window.location.origin).href;
@@ -17,12 +17,11 @@ const status = document.querySelector("#status");
 const transcript = document.querySelector("#transcript");
 
 let audioContext;
-let module;
-let model;
+let engine;
+let session;
 let stream;
 let microphoneNode;
 let transferer;
-let recognizer;
 let capturedAudio = [];
 let preparing = false;
 let recording = false;
@@ -32,14 +31,6 @@ let lastSpeechAt = 0;
 
 function debug(event, details = {}) {
   console.info("[Vosklet Challenge]", event, details);
-}
-
-function parseResult(detail) {
-  try {
-    return (JSON.parse(detail).text || "").trim();
-  } catch {
-    return (detail || "").trim();
-  }
 }
 
 function getRootMeanSquare(samples) {
@@ -135,14 +126,6 @@ function disconnectMicrophone() {
   stream = undefined;
 }
 
-async function deleteRecognizer() {
-  const activeRecognizer = recognizer;
-  recognizer = undefined;
-  if (activeRecognizer) {
-    await activeRecognizer.delete();
-  }
-}
-
 async function startRecording() {
   if (preparing || processing || recording) {
     debug("recording-start-ignored", { preparing, processing, recording });
@@ -170,16 +153,10 @@ async function startRecording() {
       settings: audioTrack?.getSettings()
     });
     await createAudioContext();
-    debug("recognizer-creating", { sampleRate: audioContext.sampleRate });
-    recognizer = await withTimeout(
-      module.createRecognizer(model, audioContext.sampleRate),
-      "El reconocedor no respondió al iniciar."
-    );
-    debug("recognizer-ready");
     microphoneNode = audioContext.createMediaStreamSource(stream);
     debug("transferer-creating");
     transferer = await withTimeout(
-      module.createTransferer(audioContext, 128 * 15),
+      engine.createTransferer(audioContext, 128 * 15),
       "La captura de audio no respondió al iniciar."
     );
     debug("transferer-ready");
@@ -198,7 +175,6 @@ async function startRecording() {
   } catch (error) {
     console.error("[Vosklet Challenge] microphone-request-failed", error);
     disconnectMicrophone();
-    await deleteRecognizer();
     recordingState.textContent = "No fue posible acceder al micrófono";
     status.textContent = error.message;
     startButton.disabled = false;
@@ -222,25 +198,13 @@ async function finishRecording() {
   debug("recording-stopped", { chunks: capturedAudio.length });
 
   try {
-    const recognizedParts = [];
-    for (let index = 0; index < capturedAudio.length; index += 1) {
-      const result = parseResult(recognizer.acceptWaveform(capturedAudio[index]));
-      if (result) {
-        recognizedParts.push(result);
-        debug("recognizer-result", { result });
+    const { text } = await session.transcribe(capturedAudio, {
+      sampleRate: audioContext.sampleRate,
+      onSegment: (segment) => debug("recognizer-result", { result: segment }),
+      onProgress: (fraction) => {
+        recordingState.textContent = `Procesando audio... ${Math.round(fraction * 100)}%`;
       }
-      if (index % 12 === 0) {
-        const progress = Math.round(((index + 1) / capturedAudio.length) * 100);
-        recordingState.textContent = `Procesando audio... ${progress}%`;
-        await new Promise((resolve) => window.setTimeout(resolve, 0));
-      }
-    }
-    const tail = parseResult(recognizer.finalResult());
-    if (tail) {
-      recognizedParts.push(tail);
-      debug("recognizer-final-result", { result: tail });
-    }
-    const text = recognizedParts.join(" ").replace(/\s+/g, " ").trim();
+    });
     debug("transcription-finished", { text });
     setTranscript(text);
   } catch (error) {
@@ -250,7 +214,6 @@ async function finishRecording() {
     recordingState.textContent = "Error al procesar el audio";
     status.textContent = error.message;
   } finally {
-    await deleteRecognizer();
     capturedAudio = [];
     processing = false;
     startButton.disabled = false;
@@ -260,10 +223,14 @@ async function finishRecording() {
 async function initialize() {
   try {
     debug("module-loading", { modelUrl });
-    module = await loadVosklet();
-    debug("module-loaded");
+    engine = await createVoskletMono();
+    debug("module-loaded", { runtime: engine.runtime });
     status.textContent = "Cargando el modelo español local...";
-    model = await module.createModel(modelUrl, modelStorePath, modelId);
+    session = await engine.loadModel({
+      url: modelUrl,
+      id: modelId,
+      storagePath: modelStorePath
+    });
     debug("model-loaded", { modelId, modelStorePath });
     status.textContent = "Modelo español local";
     startButton.disabled = false;

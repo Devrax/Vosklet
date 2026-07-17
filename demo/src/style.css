@@ -12,6 +12,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+
+  /* Keep content clear of the notch, status bar, and home indicator when
+     the WebView draws edge to edge (viewport-fit=cover). Zero elsewhere. */
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
   background-color: #e7eee8;
   background-image: linear-gradient(90deg, rgb(21 59 56 / 5%) 1px, transparent 1px), linear-gradient(rgb(21 59 56 / 5%) 1px, transparent 1px);
   background-size: 24px 24px;
@@ -24,7 +29,7 @@ textarea {
 
 .app-shell {
   width: min(100% - 32px, 640px);
-  min-height: 100vh;
+  min-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
   margin: 0 auto;
   padding: 48px 0 40px;
 }
