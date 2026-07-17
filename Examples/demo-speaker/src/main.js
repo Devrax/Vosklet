@@ -21,7 +21,7 @@ const recordingOptions = {
 // Enrollment: one phonetically rich sentence (~8 s spoken) — short enough to
 // read comfortably, long enough for a stable reference embedding.
 const enrollmentText =
-  "El veloz murciélago hindú comía feliz cardillo y kiwi mientras registro mi voz con calma.";
+  "Confirmo, acepto y autorizo que esta es mi voz";
 
 // Reading a paragraph has natural pauses at the periods, so give the
 // auto-stop more slack during enrollment than during the short challenge.

@@ -19,12 +19,12 @@
 import * as ort from "onnxruntime-web";
 import { SpeakerVerification } from "@jaehyun-ko/speaker-verification";
 
-// One deliberate model choice for the whole demo: mobile-256 (~20 MB), the
-// mobile-optimized variant with 256 channels. Embeddings are only comparable
-// within one model, so the model id is part of the storage key — switching
-// models makes users re-enroll automatically.
-const MODEL_ALIAS = "mobile-256";
-const MODEL_FILE = "NeXt_TDNN_light_C256_B3_K65.onnx";
+// One deliberate model choice for the whole demo: standard-384 (~32 MB), the
+// largest and most accurate variant the library offers. Embeddings are only
+// comparable within one model, so the model id is part of the storage key —
+// switching models makes users re-enroll automatically.
+const MODEL_ALIAS = "standard-384";
+const MODEL_FILE = "NeXt_TDNN_C384_B1_K65_7.onnx";
 const MODEL_URL = `https://huggingface.co/jaehyun-ko/next-tdnn-onnx/resolve/main/${MODEL_FILE}`;
 const REFERENCE_STORAGE_KEY = `vosklet-speaker-reference:${MODEL_ALIAS}`;
 
