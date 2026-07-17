@@ -14,7 +14,7 @@ const modelUrl = new URL("/models/es-small.tar", window.location.origin).href;
 const modelStorePath = "Spanish";
 const modelId = "vosk-model-small-es-0.42";
 const recordingOptions = {
-  stopAfterSpoken: 2_000,
+  stopAfterSpoken: 3_000,
   speechThreshold: 0.015
 };
 
