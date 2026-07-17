@@ -1,0 +1,28 @@
+{
+  "name": "vosklet-spanish-challenge-demo-speaker",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.32.1",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "android:sync": "pnpm run build && pnpm exec cap sync android",
+    "android:open": "pnpm run android:sync && pnpm exec cap open android",
+    "android:run": "pnpm run android:sync && pnpm exec cap run android",
+    "ios:sync": "pnpm run build && pnpm exec cap sync ios",
+    "ios:open": "pnpm run ios:sync && pnpm exec cap open ios",
+    "ios:run": "pnpm run ios:sync && pnpm exec cap run ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/core": "latest",
+    "@capacitor/ios": "^8.4.2",
+    "vosklet-mono": "file:../../vosklet-mono/vosklet-mono-0.4.0.tgz",
+    "@jaehyun-ko/speaker-verification": "^5.0.0",
+    "onnxruntime-web": "1.16.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "latest",
+    "vite": "latest"
+  }
+}
