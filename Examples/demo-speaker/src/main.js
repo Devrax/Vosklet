@@ -28,8 +28,10 @@ const enrollmentText =
 const enrollmentStopAfterSpoken = 3_000;
 
 // Reading accuracy required to accept the enrollment recording (bag-of-words
-// overlap; the small Vosk model won't get every word of a long paragraph).
-const enrollmentMatchThreshold = 0.8;
+// overlap). Deliberately lenient: the reading only gates that the user
+// actually spoke the reference text — the voice embedding is what matters,
+// so a mostly-correct reading should not force a retry.
+const enrollmentMatchThreshold = 0.65;
 
 // Same-speaker decision threshold recommended by the verification library.
 const sameSpeakerThreshold = 0.5;
