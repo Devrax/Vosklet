@@ -1,11 +1,11 @@
-import { createVoskletMono } from "vosklet-mono/singlethread";
+import { createVoskletMono, createSpeechMonitor } from "vosklet-mono/singlethread";
 import "./style.css";
 
 const modelUrl = new URL("/models/es-small.tar", window.location.origin).href;
 const modelStorePath = "Spanish";
 const modelId = "vosk-model-small-es-0.42";
 const recordingOptions = {
-  stopAfterSpoken: 1_500,
+  stopAfterSpoken: 2_000,
   speechThreshold: 0.015
 };
 
@@ -22,58 +22,13 @@ let session;
 let stream;
 let microphoneNode;
 let transferer;
-let capturedAudio = [];
+let monitor;
 let preparing = false;
 let recording = false;
 let processing = false;
-let hasSpoken = false;
-let lastSpeechAt = 0;
 
 function debug(event, details = {}) {
   console.info("[Vosklet Challenge]", event, details);
-}
-
-function getRootMeanSquare(samples) {
-  let sumOfSquares = 0;
-  for (const sample of samples) {
-    sumOfSquares += sample * sample;
-  }
-  return Math.sqrt(sumOfSquares / samples.length);
-}
-
-function getAutoStopDelay() {
-  const { stopAfterSpoken } = recordingOptions;
-  return Number.isFinite(stopAfterSpoken) && stopAfterSpoken >= 0
-    ? stopAfterSpoken
-    : undefined;
-}
-
-function captureAudio(samples) {
-  if (!recording) {
-    return;
-  }
-
-  capturedAudio.push(samples);
-  const rms = getRootMeanSquare(samples);
-  const now = performance.now();
-
-  if (rms >= recordingOptions.speechThreshold) {
-    if (!hasSpoken) {
-      debug("speech-detected", { rms, threshold: recordingOptions.speechThreshold });
-    }
-    hasSpoken = true;
-    lastSpeechAt = now;
-    return;
-  }
-
-  const autoStopDelay = getAutoStopDelay();
-  if (hasSpoken && autoStopDelay !== undefined && now - lastSpeechAt >= autoStopDelay) {
-    debug("recording-auto-stop", {
-      silentMilliseconds: Math.round(now - lastSpeechAt),
-      stopAfterSpoken: autoStopDelay
-    });
-    void finishRecording();
-  }
 }
 
 function withTimeout(promise, message, timeout = 5000) {
@@ -160,10 +115,20 @@ async function startRecording() {
       "La captura de audio no respondió al iniciar."
     );
     debug("transferer-ready");
-    capturedAudio = [];
-    hasSpoken = false;
-    lastSpeechAt = 0;
-    transferer.port.onmessage = (audioEvent) => captureAudio(audioEvent.data);
+    monitor = createSpeechMonitor({
+      ...recordingOptions,
+      onSpeechStart: (rms) => {
+        debug("speech-detected", { rms, threshold: recordingOptions.speechThreshold });
+      },
+      onAutoStop: (blocks, { silentMilliseconds }) => {
+        debug("recording-auto-stop", {
+          silentMilliseconds: Math.round(silentMilliseconds),
+          stopAfterSpoken: recordingOptions.stopAfterSpoken
+        });
+        void finishRecording(blocks);
+      }
+    });
+    transferer.port.onmessage = (audioEvent) => monitor.push(audioEvent.data);
     microphoneNode.connect(transferer);
     recording = true;
     debug("recording-started", {
@@ -183,7 +148,7 @@ async function startRecording() {
   }
 }
 
-async function finishRecording() {
+async function finishRecording(blocks) {
   if (!recording || processing) {
     return;
   }
@@ -194,6 +159,7 @@ async function finishRecording() {
   stopButton.disabled = true;
   transferer.port.onmessage = null;
   disconnectMicrophone();
+  const capturedAudio = blocks ?? monitor.stop();
   recordingState.textContent = "Procesando audio...";
   debug("recording-stopped", { chunks: capturedAudio.length });
 
@@ -214,7 +180,7 @@ async function finishRecording() {
     recordingState.textContent = "Error al procesar el audio";
     status.textContent = error.message;
   } finally {
-    capturedAudio = [];
+    monitor = undefined;
     processing = false;
     startButton.disabled = false;
   }

@@ -1,6 +1,7 @@
 import { bootEngine, supportsThreadedRuntime } from "./core.js";
 
 export { supportsThreadedRuntime };
+export { createSpeechMonitor, getRootMeanSquare } from "./speechMonitor.js";
 
 /**
  * Single-thread-only entry. Bundlers following this module pull in just the

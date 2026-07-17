@@ -120,6 +120,68 @@ export declare class VoskletMono {
   dispose(): Promise<void>;
 }
 
+export interface SpeechMonitorOptions {
+  /**
+   * RMS level (0..1) at or above which a block counts as speech.
+   * Default `0.015`.
+   */
+  speechThreshold?: number;
+  /**
+   * Milliseconds of continuous silence — after speech has been detected —
+   * before `onAutoStop` fires. Default `2000`. Pass a non-finite value
+   * (e.g. `Infinity`) to disable the auto-stop and use `stop()` only.
+   */
+  stopAfterSpoken?: number;
+  /** Fired once, on the first block that crosses the speech threshold. */
+  onSpeechStart?: (rms: number) => void;
+  /** Fired on every block that counts as speech. */
+  onSpeech?: (rms: number) => void;
+  /**
+   * Fired on every silent block after speech, with the milliseconds elapsed
+   * since the last speech block — countdown UIs hook in here.
+   */
+  onSilence?: (silentMilliseconds: number) => void;
+  /**
+   * Fired when the silence reaches `stopAfterSpoken`, with every block
+   * accumulated since monitoring began — hand them to `transcribe()`.
+   * The monitor stops itself first, so trailing blocks are dropped.
+   */
+  onAutoStop?: (
+    blocks: Float32Array[],
+    info: { silentMilliseconds: number }
+  ) => void;
+}
+
+export declare class SpeechMonitor {
+  /** True once a block has crossed the speech threshold. */
+  readonly hasSpoken: boolean;
+  /** True after stop() or an auto-stop; push() becomes a no-op. */
+  readonly stopped: boolean;
+  /** Number of blocks accumulated so far. */
+  readonly blockCount: number;
+  /** Feeds one mono Float32Array PCM block (-1.0..1.0). */
+  push(block: Float32Array): void;
+  /**
+   * Stops monitoring and returns the accumulated blocks — the manual
+   * counterpart of the auto-stop. Returns [] once blocks were handed out.
+   */
+  stop(): Float32Array[];
+  /** Clears all state so the monitor can serve another recording. */
+  reset(): void;
+}
+
+/**
+ * Energy-based speech monitor: feed it captured PCM blocks and it detects
+ * speech, tracks silence, and fires `onAutoStop` with the accumulated blocks
+ * once the speaker has been silent for `stopAfterSpoken` milliseconds.
+ */
+export declare function createSpeechMonitor(
+  options?: SpeechMonitorOptions
+): SpeechMonitor;
+
+/** Root mean square (0..1) of one PCM block — useful for level meters. */
+export declare function getRootMeanSquare(samples: Float32Array): number;
+
 /** True when the threaded runtime can run in the current environment. */
 export declare function supportsThreadedRuntime(): boolean;
 

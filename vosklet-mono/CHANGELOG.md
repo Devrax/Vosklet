@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-17
+
+### Added
+
+- `createSpeechMonitor()`: an energy-based speech monitor that turns captured PCM blocks into speech hooks. Feed it blocks with `push()`; it accumulates them, fires `onSpeechStart`/`onSpeech` when the RMS crosses `speechThreshold`, `onSilence` with the elapsed quiet time, and `onAutoStop` with every captured block once the speaker has been silent for `stopAfterSpoken` milliseconds (default 2000; pass `Infinity` to disable). `stop()` is the manual counterpart and `reset()` reuses the monitor for the next recording. Detection is energy-based (RMS threshold), suited to quiet environments — tune `speechThreshold` for noisier ones.
+- `getRootMeanSquare()`: the monitor's RMS measure, exported for level meters and custom detection.
+
 ## [0.2.1] - 2026-07-17
 
 Initial public release.
@@ -24,4 +31,5 @@ Initial public release.
 - Self-contained publish pipeline: Vite build vendors the Vosklet runtimes (loaders, Emscripten glue, and Wasm binaries) into `dist/`, so the package installs with zero dependencies.
 
 [Unreleased]: https://github.com/Devrax/Vosklet/tree/main/vosklet-mono
+[0.3.0]: https://github.com/Devrax/Vosklet/tree/main/vosklet-mono
 [0.2.1]: https://github.com/Devrax/Vosklet/tree/main/vosklet-mono

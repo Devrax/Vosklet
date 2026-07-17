@@ -7,10 +7,19 @@ export type {
   ModelDescriptor,
   Runtime,
   RuntimeOption,
+  SpeechMonitorOptions,
   TranscribeOptions,
   TranscribeResult
 } from "./index";
-export { ModelSession, StreamingRecognizer, VoskletMono, supportsThreadedRuntime } from "./index";
+export {
+  ModelSession,
+  SpeechMonitor,
+  StreamingRecognizer,
+  VoskletMono,
+  createSpeechMonitor,
+  getRootMeanSquare,
+  supportsThreadedRuntime
+} from "./index";
 
 export interface CreateSinglethreadOptions
   extends Omit<CreateVoskletMonoOptions, "runtime"> {

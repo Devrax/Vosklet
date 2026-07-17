@@ -18,8 +18,8 @@ importers:
         specifier: ^8.4.2
         version: 8.4.2(@capacitor/core@8.4.2)
       vosklet-mono:
-        specifier: file:../vosklet-mono/vosklet-mono-0.2.1.tgz
-        version: file:../vosklet-mono/vosklet-mono-0.2.1.tgz
+        specifier: file:../vosklet-mono/vosklet-mono-0.3.0.tgz
+        version: file:../vosklet-mono/vosklet-mono-0.3.0.tgz
     devDependencies:
       '@capacitor/cli':
         specifier: latest
@@ -648,9 +648,9 @@ packages:
       yaml:
         optional: true
 
-  vosklet-mono@file:../vosklet-mono/vosklet-mono-0.2.1.tgz:
-    resolution: {integrity: sha512-moNF+3YJ2u6cvEY+C/L/hLBXKaq9WZMD9UAHu4/WM4Gk19eaAmPY2/KN/qOxMi4DKSPKoBUa0VFzDPPY3ROWaw==, tarball: file:../vosklet-mono/vosklet-mono-0.2.1.tgz}
-    version: 0.2.1
+  vosklet-mono@file:../vosklet-mono/vosklet-mono-0.3.0.tgz:
+    resolution: {integrity: sha512-oqZASHuHidxWIYB/Pp+8YDggdQFC7PmKbzCXvWzosqdzKxxzclfaO5QXqfguZVwb+9+i759XMGJEvzucaWsGMA==, tarball: file:../vosklet-mono/vosklet-mono-0.3.0.tgz}
+    version: 0.3.0
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -1236,7 +1236,7 @@ snapshots:
       '@types/node': 26.1.1
       fsevents: 2.3.3
 
-  vosklet-mono@file:../vosklet-mono/vosklet-mono-0.2.1.tgz: {}
+  vosklet-mono@file:../vosklet-mono/vosklet-mono-0.3.0.tgz: {}
 
   which@2.0.2:
     dependencies:
