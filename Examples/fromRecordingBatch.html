@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="../Vosklet.js" async defer></script>
+    <script>
+      let module;
+      let model;
+      let recorder;
+      let stream;
+      let chunks = [];
+      let ctx;
+
+      const modelUrl = "https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz";
+      const modelStorePath = "English";
+      const modelId = "vosk-model-small-en-us-0.15";
+
+      function parseResult(detail) {
+        try {
+          return (JSON.parse(detail).text || "").trim();
+        } catch {
+          return (detail || "").trim();
+        }
+      }
+
+      function toMono(audioBuffer) {
+        if (audioBuffer.numberOfChannels === 1) return audioBuffer.getChannelData(0);
+        let output = new Float32Array(audioBuffer.length);
+        for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+          let input = audioBuffer.getChannelData(channel);
+          for (let i = 0; i < output.length; i++) output[i] += input[i] / audioBuffer.numberOfChannels;
+        }
+        return output;
+      }
+
+      async function transcribeBlob(blob) {
+        if (!ctx) ctx = new AudioContext({ sinkId: { type: "none" } });
+        if (!module) module = await loadVosklet();
+        if (!model) model = await module.createModel(modelUrl, modelStorePath, modelId);
+
+        let audioBuf = await ctx.decodeAudioData(await blob.arrayBuffer());
+        let samples = toMono(audioBuf);
+        let recognizer = await module.createRecognizer(model, audioBuf.sampleRate);
+        let finalized = [];
+        let chunkSize = audioBuf.sampleRate * 2;
+
+        recognizer.addEventListener("result", ev => {
+          let text = parseResult(ev.detail);
+          if (text) finalized.push(text);
+        });
+
+        for (let offset = 0; offset < samples.length; offset += chunkSize) {
+          recognizer.acceptWaveform(samples.subarray(offset, Math.min(samples.length, offset + chunkSize)));
+        }
+
+        let tail = parseResult(recognizer.finalResult());
+        if (tail) finalized.push(tail);
+
+        await recognizer.delete();
+        return finalized.join(" ").replace(/\s+/g, " ").trim();
+      }
+
+      async function transcribeSelectedFile() {
+        let file = document.getElementById("audioFile").files[0];
+        if (!file) return alert("Choose an audio file first.");
+        document.getElementById("transcript").textContent = await transcribeBlob(file);
+      }
+
+      async function toggleRecording() {
+        let button = document.getElementById("record");
+        if (recorder && recorder.state === "recording") {
+          recorder.stop();
+          button.textContent = "Record challenge response";
+          return;
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        chunks = [];
+        recorder = new MediaRecorder(stream);
+        recorder.ondataavailable = ev => chunks.push(ev.data);
+        recorder.onstop = async () => {
+          stream.getTracks().forEach(track => track.stop());
+          let blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+          document.getElementById("transcript").textContent = await transcribeBlob(blob);
+        };
+        recorder.start();
+        button.textContent = "Stop recording and transcribe";
+      }
+    </script>
+  </head>
+  <body>
+    <input id="audioFile" type="file" accept="audio/*" />
+    <button onclick="transcribeSelectedFile()">Transcribe selected file</button>
+    <button id="record" onclick="toggleRecording()">Record challenge response</button>
+    <pre id="transcript"></pre>
+  </body>
+</html>

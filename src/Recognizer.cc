@@ -1,5 +1,4 @@
 #include "Recognizer.h"
-#include <atomic>
 
 const char *recognizerInitErr{"Unable to initialize recognizer"};
 Recognizer::Recognizer(int index, float sampleRate, CommonModel *model) : rec{vosk_recognizer_new(std::get<VoskModel *>(model->mdl), sampleRate)}
@@ -8,12 +7,20 @@ Recognizer::Recognizer(int index, float sampleRate, CommonModel *model) : rec{vo
   {
     fireEv(index, recognizerInitErr);
   }
+  else
+  {
+    fireEv(index);
+  }
 }
 Recognizer::Recognizer(int index, float sampleRate, CommonModel *model, CommonModel *spkModel) : rec{vosk_recognizer_new_spk(std::get<VoskModel *>(model->mdl), sampleRate, std::get<VoskSpkModel *>(spkModel->mdl))}
 {
   if (rec == nullptr)
   {
     fireEv(index, recognizerInitErr);
+  }
+  else
+  {
+    fireEv(index);
   }
 }
 Recognizer::Recognizer(int index, float sampleRate, CommonModel *model, const std::string &grm, int) : rec{vosk_recognizer_new_grm(std::get<VoskModel *>(model->mdl), sampleRate, grm.c_str())}
@@ -22,19 +29,25 @@ Recognizer::Recognizer(int index, float sampleRate, CommonModel *model, const st
   {
     fireEv(index, recognizerInitErr);
   }
+  else
+  {
+    fireEv(index);
+  }
 }
 
-const char *Recognizer::acceptWaveform(int start, int len)
+std::string Recognizer::acceptWaveform(int start, int len)
 {
-  switch (vosk_recognizer_accept_waveform_f(rec, reinterpret_cast<float *>(start), len))
+  if (vosk_recognizer_accept_waveform_f(rec, reinterpret_cast<float *>(start), len) == 1)
   {
-  case 0:
-    return vosk_recognizer_partial_result(rec);
-    break;
-  case 1:
-    return vosk_recognizer_result(rec);
+    const char *result = vosk_recognizer_result(rec);
+    return result == nullptr ? "" : result;
   }
-  return nullptr;
+  return "";
+}
+std::string Recognizer::finalResult()
+{
+  const char *result = vosk_recognizer_final_result(rec);
+  return result == nullptr ? "" : result;
 }
 void Recognizer::reset()
 {

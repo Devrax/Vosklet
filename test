@@ -3,6 +3,7 @@ INITIAL_MEMORY=${INITIAL_MEMORY:-315mb}
 MAX_THREADS=${MAX_THREADS:-1}
 EMSDK=${EMSDK:-emsdk}
 JOBS=${JOBS:-$(nproc)}
+VOSKLET_MODE=${VOSKLET_MODE:-threaded}
 
 if [ "$EMSDK" != emsdk ] && [ ! -d "$EMSDK" ]; then
   echo "Invalid emsdk path"
@@ -14,6 +15,10 @@ if [ "$MAX_THREADS" -lt 1 ]; then
 fi
 if [ "$JOBS" -lt 1 ]; then
   echo "JOBS must be greater than or equal to 1"
+  exit 1
+fi
+if [ "$VOSKLET_MODE" != threaded ] && [ "$VOSKLET_MODE" != singlethread ]; then
+  echo "VOSKLET_MODE must be threaded or singlethread"
   exit 1
 fi
 if ! [[ $INITIAL_MEMORY =~ ^[0-9]+([kmgt]b)?$ ]]; then
@@ -38,7 +43,10 @@ SRC=$(realpath src)
 
 cd "$SRC" &&
 files="Util.o CommonModel.o Recognizer.o Bindings.o"
-sharedFlags="-Wall -Wextra -Wpedantic -fno-rtti -msimd128 -matomics -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -sSTRICT -sWASM_WORKERS=2"
+sharedFlags="-Wall -Wextra -Wpedantic -fno-rtti -msimd128 -mbulk-memory -mreference-types -mnontrapping-fptoint -mextended-const -msign-ext -mmutable-globals -sSTRICT"
+if [ "$VOSKLET_MODE" = threaded ]; then
+  sharedFlags="$sharedFlags -matomics -sWASM_WORKERS=2"
+fi
 sharedCXXFlags="-std=c++23 -I$VOSK/src -I. -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 -DMAX_WORKERS=$MAX_THREADS"
 sharedLDFlags="-sWASMFS -sWASM_BIGINT -sMODULARIZE -sWASM_EXNREF -sTEXTDECODER=2 -sEVAL_CTORS=2 -sINITIAL_MEMORY=$INITIAL_MEMORY -sALLOW_MEMORY_GROWTH -sPOLYFILL=0 -sEXIT_RUNTIME=0 -sINVOKE_RUN=0 -sSUPPORT_LONGJMP=0 -sINCOMING_MODULE_JS_API=wasmMemory,instantiateWasm,wasm -sEXPORT_NAME=loadVosklet -sMALLOC=emmalloc -sENVIRONMENT=web,worker -L$KALDI/src -l:online2/kaldi-online2.a -l:decoder/kaldi-decoder.a -l:ivector/kaldi-ivector.a -l:gmm/kaldi-gmm.a -l:tree/kaldi-tree.a -l:feat/kaldi-feat.a -l:cudamatrix/kaldi-cudamatrix.a -l:lat/kaldi-lat.a -l:lm/kaldi-lm.a -l:rnnlm/kaldi-rnnlm.a -l:hmm/kaldi-hmm.a -l:nnet3/kaldi-nnet3.a -l:transform/kaldi-transform.a -l:matrix/kaldi-matrix.a -l:fstext/kaldi-fstext.a -l:util/kaldi-util.a -l:base/kaldi-base.a -L$OPENFST/lib -l:libfst.a -l:libfstngram.a -L$OPENBLAS -l:lib/libopenblas.a -L$VOSK/src -l:vosk.a -lembind --no-entry --pre-js ../Examples/Wrapper.js -o ../test.js"
 

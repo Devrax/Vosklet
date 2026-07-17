@@ -3,9 +3,6 @@
 #include <variant>
 #include <fstream>
 #include <functional>
-#include <queue>
-
-#include "emscripten/atomic.h"
 #include "emscripten/console.h"
 
 namespace fs = std::filesystem;

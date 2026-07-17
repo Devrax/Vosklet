@@ -6,6 +6,8 @@ declare global {
   }
 }
 
+export function loadVosklet(moduleArg?: Record<string, unknown>): Promise<Module>;
+
 export type EpMode =
   | "ANSWER_DEFAULT"
   | "DISABLED"
@@ -33,7 +35,8 @@ export interface Module {
     bufferSize: number
   ): Promise<AudioWorkletNode>;
   cleanUp(): Promise<void>;
-  getModelCache(): Promise<Cache>;
+  /** Resolves null when the Cache API is unusable on the current origin (e.g. capacitor:// on iOS). */
+  getModelCache(): Promise<Cache | null>;
   EpMode: EpMode;
 }
 
@@ -47,7 +50,7 @@ export interface SpkModel {
 }
 
 export interface Recognizer extends EventTarget {
-  acceptWaveform(audioData: Float32Array): void;
+  acceptWaveform(audioData: Float32Array): string;
   setWords(words: boolean): void;
   setPartialWords(partialWords: boolean): void;
   setNLSML(nlsml: boolean): void;
@@ -60,7 +63,8 @@ export interface Recognizer extends EventTarget {
     tEnd: number,
     tMax: number
   ): void;
+  finalResult(): string;
+  reset(): void;
 
   delete(processCurrent?: boolean): Promise<void>;
 }
-

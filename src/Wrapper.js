@@ -8,7 +8,40 @@ if (ENVIRONMENT_IS_WEB) {
   // 'var' to expose this outside the if
   var objs = [];
   var events = ['status', 'partialResult', 'result'];
-  let _cache = caches.open('Vosklet');
+  // The Cache API only accepts http(s) request URLs. On custom app schemes
+  // (e.g. capacitor://localhost in iOS WKWebView) every cache operation
+  // throws "Request url is not HTTP/HTTPS", so probe once and fall back to
+  // uncached fetches when the cache is unusable on this origin.
+  let _cache = (async () => {
+    try {
+      let cache = await caches.open('Vosklet');
+      await cache.keys('vosklet-cache-probe', { ignoreSearch: true });
+      return cache;
+    } catch {
+      return null;
+    }
+  })();
+  let gzipMagic = [0x1f, 0x8b];
+  let ustarMagic = [0x75, 0x73, 0x74, 0x61, 0x72];
+  let hasGzipMagic = bytes => bytes.length > 1 && bytes[0] == gzipMagic[0] && bytes[1] == gzipMagic[1];
+  let isUstarTar = bytes => bytes.length >= 262 && ustarMagic.every((b, idx) => bytes[257 + idx] == b);
+  let toTarBytes = async (bytes, url) => {
+    if (isUstarTar(bytes)) return bytes;
+    if (typeof DecompressionStream == 'undefined') {
+      if (hasGzipMagic(bytes))
+        throw new Error('Model fetch succeeded but gzip decompression is unavailable in this browser (missing DecompressionStream).');
+      throw new Error('Fetched model bytes from ' + url + ' are invalid: expected a USTAR tar archive or gzip-compressed USTAR tar archive.');
+    }
+    try {
+      let stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+      let decompressed = new Uint8Array(await new Response(stream).arrayBuffer());
+      if (!isUstarTar(decompressed))
+        throw new Error('decompressed bytes are not a USTAR tar archive');
+      return decompressed;
+    } catch (err) {
+      throw new Error('Unable to decode model as gzip-compressed USTAR tar archive from ' + url + ': ' + (err?.message || err));
+    }
+  };
   let processorURL = URL.createObjectURL(new Blob(['(', (() => {
     registerProcessor('VoskletTransferer', class extends AudioWorkletProcessor {
       constructor(opts) {
@@ -42,7 +75,7 @@ if (ENVIRONMENT_IS_WEB) {
     static async mk(url, storepath, id, normalMdl) {
       let mdl = new CommonModel();
       let result = new Promise((resolve, reject) => {
-        mdl.addEventListener('', ev => {
+        mdl.addEventListener('status', ev => {
           if (!ev.detail) {
             if (normalMdl) mdl['findWord'] = word => mdl.obj['findWord'](word);
             resolve(mdl);
@@ -50,18 +83,27 @@ if (ENVIRONMENT_IS_WEB) {
           else reject(ev.detail);
         }, { once: true });
       });
-      let cache = await caches.open('Vosklet');
-      let req = (await cache.keys(storepath, { ignoreSearch: true }))[0];
+      let cache = await _cache;
       let res;
-      if (typeof req == 'undefined' || req.url.split('?')[1] != id) {
+      if (cache) {
+        let req = (await cache.keys(storepath, { ignoreSearch: true }))[0];
+        if (typeof req != 'undefined' && req.url.split('?')[1] == id)
+          res = await cache.match(req);
+      }
+      if (!res) {
 
-        // Caching already handled explicitly 
+        // Caching already handled explicitly
         res = await fetch(url, { cache: 'no-store' });
         if (!res.ok) throw 'Unable to fetch model, status: ' + res.status;
-        res = new Response(res.body.pipeThrough(new DecompressionStream('gzip')));
-        await cache.put(storepath + '?' + id, res.clone());
+        res = new Response(await toTarBytes(new Uint8Array(await res.arrayBuffer()), url));
+        if (cache) {
+          try {
+            await cache.put(storepath + '?' + id, res.clone());
+          } catch {
+            // A failed cache write (quota, private mode) must not block model creation.
+          }
+        }
       }
-      else res = await cache.match(req);
       let tar = await res.arrayBuffer();
       let tarStart = _malloc(tar.byteLength);
       HEAPU8.set(new Uint8Array(tar), tarStart);
@@ -74,18 +116,13 @@ if (ENVIRONMENT_IS_WEB) {
       super();
       objs.push(this);
     }
-    acceptWaveform(audioData) {
-      let start = _malloc(audioData.length * 4);
-      HEAPF32.set(audioData, start / 4);
-      return UTF8ToString(this.obj['acceptWaveform'](start, audioData.length));
-    }
     delete() {
       this.obj.delete();
     }
     static async mk(model, sampleRate, mode, grammar, spkModel) {
       let rec = new Recognizer();
       let result = new Promise((resolve, reject) => {
-        rec.addEventListener('', ev => {
+        rec.addEventListener('status', ev => {
           if (!ev.detail) resolve(rec);
           else reject(ev.detail);
         }, { once: true });
@@ -103,7 +140,15 @@ if (ENVIRONMENT_IS_WEB) {
       return result;
     }
   }
-  Module = {
+  Recognizer.prototype['acceptWaveform'] = function(audioData) {
+    let start = _malloc(audioData.length * 4);
+    HEAPF32.set(audioData, start / 4);
+    return this.obj['acceptWaveform'](start, audioData.length);
+  };
+  Recognizer.prototype['finalResult'] = function() {
+    return this.obj['finalResult']();
+  };
+  Object.assign(Module, {
     'getModelCache': () => _cache,
 
     'cleanUp': async () => {
@@ -136,6 +181,6 @@ if (ENVIRONMENT_IS_WEB) {
 
     'createRecognizerWithSpkModel': (model, sampleRate, spkModel) =>
       Recognizer.mk(model.obj, sampleRate, 2, null, spkModel.obj)
-  }
+  });
 
 }
