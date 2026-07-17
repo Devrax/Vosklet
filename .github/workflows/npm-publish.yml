@@ -1,0 +1,111 @@
+name: Publish npm packages
+
+on:
+  push:
+    tags:
+      - "[0-9]*.[0-9]*.[0-9]*"
+      - "v[0-9]*.[0-9]*.[0-9]*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate release tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+
+    steps:
+      - name: Check out the tagged source
+        uses: actions/checkout@v6
+
+      - name: Match tag and package versions
+        id: release
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const match = /^v?(\d+\.\d+\.\d+)$/.exec(process.env.RELEASE_TAG);
+          if (!match) {
+            throw new Error(
+              `Release tag must be a stable semantic version; received ${process.env.RELEASE_TAG}`
+            );
+          }
+
+          const version = match[1];
+          for (const packageName of ["monosklet", "speaklet"]) {
+            const manifest = JSON.parse(
+              fs.readFileSync(`${packageName}/package.json`, "utf8")
+            );
+            if (manifest.name !== packageName) {
+              throw new Error(
+                `${packageName}/package.json is named ${manifest.name}`
+              );
+            }
+            if (manifest.version !== version) {
+              throw new Error(
+                `${packageName} is ${manifest.version}, but the release tag is ${version}`
+              );
+            }
+          }
+
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `version=${version}\n`);
+          NODE
+
+  build:
+    name: Build release tarballs
+    needs: validate
+    uses: ./.github/workflows/build-npm-tarballs.yml
+
+  publish:
+    name: Publish monosklet and speaklet
+    needs:
+      - validate
+      - build
+    runs-on: ubuntu-latest
+    environment: NPM_TOKEN
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Set up Node.js for npm trusted publishing
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Install an OIDC-capable npm CLI
+        run: npm install --global "npm@^11.5.1"
+
+      - name: Download the verified tarballs
+        uses: actions/download-artifact@v8
+        with:
+          name: npm-tarballs
+          path: artifacts
+
+      - name: Verify artifact checksums
+        working-directory: artifacts
+        run: sha256sum --check SHA256SUMS
+
+      - name: Publish monosklet
+        env:
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+          # Optional bootstrap fallback; npm prefers configured OIDC.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish "artifacts/monosklet-${RELEASE_VERSION}.tgz" --access public
+
+      - name: Publish speaklet
+        env:
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+          # Optional bootstrap fallback; npm prefers configured OIDC.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish "artifacts/speaklet-${RELEASE_VERSION}.tgz" --access public
