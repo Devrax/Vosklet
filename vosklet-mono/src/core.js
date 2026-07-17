@@ -155,7 +155,7 @@ class ModelSession {
       );
     }
     const recognizer = grammar
-      ? await this.#module.createRecognizerWithGrm(this.#model, grammar, sampleRate)
+      ? await this.#module.createRecognizerWithGrm(this.#model, sampleRate, grammar)
       : await this.#module.createRecognizer(this.#model, sampleRate);
     return new StreamingRecognizer(recognizer);
   }

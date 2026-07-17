@@ -294,6 +294,9 @@ What changes compared to the main-thread engine:
 - **Capture stays on the main thread.** Workers have no `AudioContext`, so `engine.createTransferer()` runs the AudioWorklet locally and you `postMessage` nothing yourself — wire it to `monitor.push()` or `transcribe()` as usual.
 - `engine.host` is `"worker"`; the runtime is always `"singlethread"` (the threaded runtime manages its own workers and needs cross-origin isolation — pointless to nest).
 - `dispose()` also terminates the worker; `terminate()` hard-stops it without cleanup.
+- **Native speaker identification is available.** `engine.loadSpkModel({ url, id, storagePath? })` loads a Vosk speaker model (e.g. [vosk-model-spk-0.4](https://alphacephei.com/vosk/models), language-independent, same USTAR TAR packaging as speech models); pass the session as `speakerModel` to `transcribe()` or `createRecognizer()` and results gain `speakerVectors` — one `{ vector, frames }` x-vector per completed utterance. Compare enrolled and probe embeddings (e.g. cosine similarity, frames-weighted average across utterances) to identify the speaker. Cannot be combined with `grammar`.
+
+  The x-vector extractor is compiled into the Wasm runtime the engine already runs, so this is the lightest way to add speaker identification: no onnxruntime-web, no extra JS — just the ~13 MB `vosk-model-spk-0.4` archive next to your speech model. The [`vosklet-speaker`](../vosklet-speaker) toolkit remains the higher-level option (a newer NeXt-TDNN embedding model, plus a ready-made enrollment/verification API) at the cost of bundling an ONNX runtime. As a starting point for the raw x-vectors, treat a frames-weighted cosine similarity of **0.75 or higher** as the same speaker — Vosk's classic ~0.45 cutoff proved too lenient in our testing — and tune the threshold against real recordings from your deployment.
 
 Bundler notes: the entry ships the literal `new Worker(new URL("./worker.js", import.meta.url))` and `new URL("./runtime/...", import.meta.url)` patterns, which Vite and webpack 5 detect and bundle automatically. For setups that don't, `createVoskletMonoWorker({ workerUrl, glueUrl, wasmUrl })` overrides the URL resolution. The worker script is a classic worker (not a module worker), so it runs in every WebView that has workers at all.
 
@@ -321,7 +324,7 @@ Bundler notes: the entry ships the literal `new Worker(new URL("./worker.js", im
 - [ ] Free resources: recognizers via `finish()`/`cancel()`, models via `unload()`, everything via `engine.dispose()`.
 - [ ] Debug with Chrome remote inspection (`chrome://inspect`) while the app runs on a device.
 
-A complete working example — a Spanish voice-challenge Capacitor app using this exact flow — lives in the parent repository under [`Examples/demo/`](https://github.com/Devrax/Vosklet/tree/main/Examples/demo): its home page routes to a main-thread version, a Web Worker version of the same challenge, and a speaker-verification variant.
+A complete working example — a Spanish voice-challenge Capacitor app using this exact flow — lives in the parent repository under [`Examples/demo/`](https://github.com/Devrax/Vosklet/tree/main/Examples/demo): its home page routes to a main-thread version, a Web Worker version of the same challenge, a speaker-verification variant, and a native x-vector speaker-identification variant built on `loadSpkModel()`.
 
 ## API summary
 
@@ -332,6 +335,7 @@ A complete working example — a Spanish voice-challenge Capacitor app using thi
 | `createSpeechMonitor(options?)` | Energy-based speech monitor: `push(block)` accumulates PCM and fires `onSpeechStart` / `onSpeech` / `onSilence` / `onAutoStop`; `stop()` returns the blocks, `reset()` reuses it. |
 | `createVoskletMonoWorker(options?)` | From `vosklet-mono/worker`: boots the single-thread runtime inside a dedicated Web Worker (no SharedArrayBuffer/COOP/COEP) and returns the same engine API — recognition off the UI thread. |
 | `supportsWorkerHost()` | From `vosklet-mono/worker`: `true` when Web Workers are available. |
+| `engine.loadSpkModel({ url, id, storagePath? })` | Worker engine only: loads a Vosk speaker-identification model; pass the returned session as `speakerModel` to `transcribe()`/`createRecognizer()` for per-utterance x-vectors (`speakerVectors`). |
 | `getRootMeanSquare(samples)` | RMS (0..1) of one PCM block — for level meters or custom detection. |
 | `engine.loadModel({ url, id, storagePath? })` | Loads a model from a local or external URL; returns a `ModelSession`. |
 | `engine.createTransferer(audioContext, bufferSize?)` | Vosklet `AudioWorklet` node for microphone PCM capture. |
@@ -341,7 +345,7 @@ A complete working example — a Spanish voice-challenge Capacitor app using thi
 | `session.createRecognizer({ sampleRate, grammar? })` | Streaming recognizer: `accept(block)`, `finish()`, `cancel()`. |
 | `session.unload()` | Frees the native model memory (cached archive is kept). |
 
-Full type definitions are in [`index.d.ts`](index.d.ts). Everything not wrapped here (speaker models, endpointer tuning, NLSML, word-level results) remains reachable through `engine.module` and `recognizer.raw` — see the runtime's type declarations ([`Vosklet.d.ts`](../Vosklet.d.ts), vendored into the package as `dist/runtime/Vosklet.d.ts`).
+Full type definitions are in [`index.d.ts`](index.d.ts). Everything not wrapped here (endpointer tuning, NLSML, word-level results, speaker models on the main-thread engine) remains reachable through `engine.module` and `recognizer.raw` — see the runtime's type declarations ([`Vosklet.d.ts`](../Vosklet.d.ts), vendored into the package as `dist/runtime/Vosklet.d.ts`).
 
 ## License
 

@@ -9,9 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-07-17
 
-First stable release. No functional changes since 0.4.0 — the API surface
-(`vosklet-mono`, `vosklet-mono/singlethread`, `vosklet-mono/worker`) is now
-considered stable and covered by semantic versioning.
+First stable release. The API surface (`vosklet-mono`,
+`vosklet-mono/singlethread`, `vosklet-mono/worker`) is now considered stable
+and covered by semantic versioning.
+
+### Added
+
+- Native Vosk speaker identification in the worker engine: `engine.loadSpkModel({ url, id, storagePath })` loads a speaker model archive (e.g. [vosk-model-spk-0.4](https://alphacephei.com/vosk/models)) through the same USTAR TAR pipeline as `loadModel()`, and the returned session is passed as `speakerModel` to `session.transcribe()` or `session.createRecognizer()`. Results then carry `speakerVectors` — one `{ vector, frames }` x-vector per completed utterance — for speaker identification/verification by embedding comparison. `speakerModel` cannot be combined with `grammar` (the underlying runtime supports one or the other per recognizer).
+
+### Fixed
+
+- `grammar` support was broken in both engines: the runtime's `createRecognizerWithGrm(model, sampleRate, grammar)` was being called with `grammar` and `sampleRate` swapped.
 
 ## [0.4.0] - 2026-07-17
 

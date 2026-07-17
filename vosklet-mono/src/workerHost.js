@@ -104,10 +104,61 @@ class WorkerRpc {
   }
 }
 
+// Worker-side ids of the speaker-model sessions, kept out of the public
+// surface of WorkerSpkModelSession.
+const spkModelIds = new WeakMap();
+
+class WorkerSpkModelSession {
+  #rpc;
+  #descriptor;
+  #unloaded = false;
+
+  constructor(rpc, spkModelId, descriptor) {
+    this.#rpc = rpc;
+    this.#descriptor = descriptor;
+    spkModelIds.set(this, spkModelId);
+  }
+
+  get descriptor() {
+    return { ...this.#descriptor };
+  }
+
+  assertLoaded() {
+    if (this.#unloaded) {
+      throw new Error(
+        `Speaker model "${this.#descriptor.id}" was unloaded. Call loadSpkModel() again.`
+      );
+    }
+  }
+
+  /** Frees the native speaker-model memory in the worker; the cached archive stays. */
+  unload() {
+    if (this.#unloaded) {
+      return;
+    }
+    this.#unloaded = true;
+    void this.#rpc.call("unloadSpkModel", { spkModelId: spkModelIds.get(this) });
+  }
+}
+
+function resolveSpkModelId(speakerModel) {
+  if (speakerModel == null) {
+    return undefined;
+  }
+  if (!(speakerModel instanceof WorkerSpkModelSession)) {
+    throw new TypeError(
+      "speakerModel must be a session returned by engine.loadSpkModel()."
+    );
+  }
+  speakerModel.assertLoaded();
+  return spkModelIds.get(speakerModel);
+}
+
 class WorkerStreamingRecognizer {
   #rpc;
   #recognizerId;
   #segments = [];
+  #speakerVectors = [];
   #finished = false;
 
   constructor(rpc, recognizerId) {
@@ -117,6 +168,15 @@ class WorkerStreamingRecognizer {
 
   get segments() {
     return [...this.#segments];
+  }
+
+  /**
+   * Speaker x-vectors collected so far — one per completed utterance, only
+   * when the recognizer was created with a `speakerModel`. Complete after
+   * finish() resolves.
+   */
+  get speakerVectors() {
+    return [...this.#speakerVectors];
   }
 
   /**
@@ -145,10 +205,11 @@ class WorkerStreamingRecognizer {
       throw new Error("Recognizer already finished.");
     }
     this.#finished = true;
-    const { text, segments } = await this.#rpc.call("finishRecognizer", {
+    const { text, segments, speakerVectors } = await this.#rpc.call("finishRecognizer", {
       recognizerId: this.#recognizerId
     });
     this.#segments = segments;
+    this.#speakerVectors = speakerVectors ?? [];
     return text;
   }
 
@@ -186,13 +247,14 @@ class WorkerModelSession {
     }
   }
 
-  async createRecognizer({ sampleRate, grammar } = {}) {
+  async createRecognizer({ sampleRate, grammar, speakerModel } = {}) {
     this.#assertLoaded();
     assertSampleRate(sampleRate);
     const { recognizerId } = await this.#rpc.call("createRecognizer", {
       modelId: this.#modelId,
       sampleRate,
-      grammar
+      grammar,
+      spkModelId: resolveSpkModelId(speakerModel)
     });
     return new WorkerStreamingRecognizer(this.#rpc, recognizerId);
   }
@@ -202,13 +264,16 @@ class WorkerModelSession {
    * main-thread transcribe(), plus `transfer` (default true): block buffers
    * are transferred to the worker instead of copied, so the arrays are
    * neutered on this thread afterwards — pass `transfer: false` to keep
-   * using them.
+   * using them. With a `speakerModel` (from engine.loadSpkModel()), the
+   * result also carries `speakerVectors`: one x-vector per completed
+   * utterance, for speaker identification.
    */
   async transcribe(pcm, options = {}) {
     this.#assertLoaded();
     const {
       sampleRate,
       grammar,
+      speakerModel,
       onSegment,
       onProgress,
       transfer = true,
@@ -218,7 +283,14 @@ class WorkerModelSession {
     const blocks = toBlockList(pcm);
     return this.#rpc.call(
       "transcribe",
-      { modelId: this.#modelId, blocks, sampleRate, grammar, progressEveryBlocks },
+      {
+        modelId: this.#modelId,
+        blocks,
+        sampleRate,
+        grammar,
+        spkModelId: resolveSpkModelId(speakerModel),
+        progressEveryBlocks
+      },
       {
         transfer: transfer ? transferListFor(blocks) : [],
         onProgress,
@@ -316,6 +388,36 @@ class WorkerVoskletMono {
       storagePath
     });
     return new WorkerModelSession(this.#rpc, modelId, {
+      url: resolvedUrl,
+      id,
+      storagePath
+    });
+  }
+
+  /**
+   * Loads a Vosk speaker-identification model (e.g. vosk-model-spk-0.4) in
+   * the worker, from the same USTAR TAR archive pipeline as loadModel().
+   * Pass the returned session as `speakerModel` to createRecognizer() or
+   * transcribe() to receive per-utterance x-vectors.
+   */
+  async loadSpkModel({ url, id, storagePath = "spk-model" } = {}) {
+    if (!url) {
+      throw new TypeError("loadSpkModel() requires a model archive `url`.");
+    }
+    if (!id) {
+      throw new TypeError(
+        "loadSpkModel() requires a stable model `id` (used as the cache key)."
+      );
+    }
+    const resolvedUrl = globalThis.location
+      ? new URL(url, globalThis.location.href).href
+      : url;
+    const { spkModelId } = await this.#rpc.call("loadSpkModel", {
+      url: resolvedUrl,
+      id,
+      storagePath
+    });
+    return new WorkerSpkModelSession(this.#rpc, spkModelId, {
       url: resolvedUrl,
       id,
       storagePath

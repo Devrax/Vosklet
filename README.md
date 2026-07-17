@@ -13,7 +13,7 @@ This repository is a pnpm monorepo. Three packages live here — each layer buil
 | `vosklet` (repository root) | The Wasm runtime itself: Vosk + Kaldi compiled to WebAssembly, in threaded and single-thread (WebView-safe) builds, with bundler-friendly ESM loaders. | [Low-level API](#using-the-low-level-vosklet-package-directly) · [Vosklet.d.ts](Vosklet.d.ts) |
 | [`vosklet-mono/`](vosklet-mono) | The speech-recognition engine library: on-demand model loading with caching, batch `transcribe()` with progress, a streaming recognizer, and a Web Worker host. Vendors the Wasm runtime — no runtime dependencies. | [vosklet-mono/README.md](vosklet-mono/README.md) |
 | [`vosklet-speaker/`](vosklet-speaker) | The voice-challenge toolkit: microphone capture, speech recognition, and on-device speaker verification (NeXt-TDNN via onnxruntime-web) in one API. Bundles the vosklet-mono engine; its only dependencies are exact-pinned `onnxruntime-web` and `@jaehyun-ko/speaker-verification`. | [vosklet-speaker/README.md](vosklet-speaker/README.md) |
-| [`Examples/demo/`](Examples/demo) | The demo app (Vite + Capacitor, Android and iOS): a home page routing to three Spanish voice-challenge examples — main-thread engine, Web Worker engine, and speaker verification — consuming the packed library tarballs directly. | [Spanish Capacitor demo](#spanish-capacitor-demo) |
+| [`Examples/demo/`](Examples/demo) | The demo app (Vite + Capacitor, Android and iOS): a home page routing to four Spanish voice-challenge examples — main-thread engine, Web Worker engine, speaker verification, and native Vosk x-vector speaker identification — consuming the packed library tarballs directly. | [Spanish Capacitor demo](#spanish-capacitor-demo) |
 
 Dependency direction: `vosklet` (Wasm runtime) → vendored into `vosklet-mono` (engine library) → bundled into `vosklet-speaker` (toolkit). Nothing is required at install time beyond the package you pick.
 
@@ -22,7 +22,7 @@ Dependency direction: `vosklet` (Wasm runtime) → vendored into `vosklet-mono` 
 The Vosk and NeXt-TDNN models the demos need are deliberately **not
 committed** to this repository. One command bootstraps everything — the
 workspace install, the library builds, the packed `vosklet-speaker` tarball
-the demo consumes, and the model downloads (~66 MB total):
+the demo consumes, and the model downloads (~79 MB total):
 
 ```shell
 pnpm run setup
@@ -47,7 +47,7 @@ So a stock Capacitor or WebView app simply cannot start the threaded runtime. Th
 
 1. **A single-thread Wasm runtime** (`Vosklet.single.js` / `Vosklet.single.wasm`): same API, no `SharedArrayBuffer`, no COOP/COEP, runs anywhere a modern WebView runs. Recognition is slower, so the recommended pattern is *capture first, transcribe after recording ends*.
 2. **[`vosklet-mono/`](vosklet-mono)** — a small, framework-agnostic npm library wrapping both runtimes with the ergonomics an app actually needs: on-demand model loading (local asset **or** external URL, cached across launches), a batch `transcribe()` API with progress callbacks for already-captured PCM, a streaming recognizer, and a slim `vosklet-mono/singlethread` entry that keeps the unused threaded runtime's ~2.4 MB `.wasm` out of your app bundle. Start with its [README](vosklet-mono/README.md) if you are building an app.
-3. **[`Examples/demo/`](Examples/demo)** — a working Spanish voice-challenge app (Vite + Capacitor) that builds for Android and iOS and exercises the exact packaged library artifacts. Its home page routes to three examples: the challenge on the main-thread engine, the same challenge with recognition inside a Web Worker (`vosklet-mono/worker`) so the UI thread never blocks, and a speaker-verification variant (`vosklet-speaker`) — record a reference voice reading a set text, and when you pass the spoken challenge it tells you how similar your voice sounds to that reference ([NeXt-TDNN](https://github.com/jaehyun-ko/node-speaker-verification) via onnxruntime-web, served locally by the app).
+3. **[`Examples/demo/`](Examples/demo)** — a working Spanish voice-challenge app (Vite + Capacitor) that builds for Android and iOS and exercises the exact packaged library artifacts. Its home page routes to four examples: the challenge on the main-thread engine, the same challenge with recognition inside a Web Worker (`vosklet-mono/worker`) so the UI thread never blocks, a speaker-verification variant (`vosklet-speaker`) — record a reference voice reading a set text, and when you pass the spoken challenge it tells you how similar your voice sounds to that reference ([NeXt-TDNN](https://github.com/jaehyun-ko/node-speaker-verification) via onnxruntime-web, served locally by the app) — and a native-speaker-identification variant that does the same comparison with Vosk's own x-vector model (`vosk-model-spk-0.4`) attached to the recognizer inside the Web Worker engine, no ONNX runtime involved.
 
 ## Which part should I use?
 
@@ -275,14 +275,16 @@ For direct microphone PCM, connect `AudioContext.createMediaStreamSource()` to `
 
 The demo serves a local Spanish model from `Examples/demo/public/models/es-small.tar` — not committed to the repository; `pnpm run fetch:models` downloads and repackages it there. Vite serves it as `/models/es-small.tar`, then Capacitor copies it into the Android and iOS web assets, so recognition is fully offline.
 
-It consumes the packaged libraries — `vosklet-mono` and `vosklet-speaker` as `file:` tarballs — exercising the exact artifacts that would be published to npm. Each example page has its own entry (`challenge/`, `worker/`, `speaker/`), so a page only loads the engine it demonstrates and the threaded runtime's `.wasm` stays out of the bundle entirely.
+It consumes the packaged libraries — `vosklet-mono` and `vosklet-speaker` as `file:` tarballs — exercising the exact artifacts that would be published to npm. Each example page has its own entry (`challenge/`, `worker/`, `speaker/`, `spk/`), so a page only loads the engine it demonstrates and the threaded runtime's `.wasm` stays out of the bundle entirely.
+
+The `spk/` example demonstrates the native Vosk speaker-identification path on the Web Worker engine: it loads the language-independent x-vector model (`vosk-model-spk-0.4`, served locally as `/models/spk-0.4.tar`) with `engine.loadSpkModel()` from `vosklet-mono/worker` and passes the session as `speakerModel` to `session.transcribe()`. Results then carry `speakerVectors` — one 128-dimension embedding per utterance, computed inside the worker — and the page compares the enrolled and spoken embeddings by cosine similarity — useful for testing how well the stock Vosk x-vectors separate Spanish speakers without any ONNX dependency.
 
 Platform notes:
 
 - The Android manifest declares `RECORD_AUDIO` and `MODIFY_AUDIO_SETTINGS`. Install the debug app, grant microphone permission, then use Chrome remote inspection to view the `Vosklet Challenge` logs.
 - The iOS project declares `NSMicrophoneUsageDescription` in `Examples/demo/ios/App/App/Info.plist`. iOS WKWebView does not expose `SharedArrayBuffer` in a stock Capacitor app, so the single-thread runtime is the correct choice there as well. The simulator uses the host Mac's microphone.
 
-Recording behavior is configured per example in [`Examples/demo/src/`](Examples/demo/src) (`challenge.js`, `worker.js`, `speaker.js`):
+Recording behavior is configured per example in [`Examples/demo/src/`](Examples/demo/src) (`challenge.js`, `worker.js`, `speaker.js`, `spk.js`):
 
 - `stopAfterSpoken` is the continuous silence delay in milliseconds after the first detected speech block. Its default is `1_500`; assign `false` to require an explicit Stop action.
 - `speechThreshold` is the RMS amplitude used to classify a PCM block as speech. Its default is `0.015` and should be adjusted for unusually noisy or quiet microphone environments.
@@ -320,7 +322,7 @@ cd Examples/demo/ios/App && xcodebuild -project App.xcodeproj -scheme App -sdk i
 | `vosklet-mono/` | Consumer-facing npm wrapper library (on-demand models, batch transcription, WebView-safe by default). |
 | `vosklet-speaker/` | Voice-challenge toolkit: capture + recognition + speaker verification, with the vosklet-mono engine bundled in. |
 | `Examples/` | Standalone HTML usage examples. |
-| `Examples/demo/` | The demo app (Vite + Capacitor): home page routing to the main-thread, Web Worker, and speaker-verification examples. |
+| `Examples/demo/` | The demo app (Vite + Capacitor): home page routing to the main-thread, Web Worker, speaker-verification, and x-vector speaker-identification examples. |
 
 ## Further documentation
 

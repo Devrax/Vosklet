@@ -1083,7 +1083,7 @@ packages:
         optional: true
 
   vosklet-mono@file:vosklet-mono/vosklet-mono-1.0.0.tgz:
-    resolution: {integrity: sha512-Ywj7j+N9uBqzI4yhqtbEyiGQdOlQSSvpWLXLVOoSMS5TrtSS5G0KTLn1GboC6z9cZ3mmSSpBeHtynIWZuEglSQ==, tarball: file:vosklet-mono/vosklet-mono-1.0.0.tgz}
+    resolution: {integrity: sha512-NKiIKV9FBq136gVEVEEIX1YBzk37DJfCzzHszwDhL2y2IShr0ycuhHPNcFISmO8bkohiNkLQhupYlj3Xazysmg==, tarball: file:vosklet-mono/vosklet-mono-1.0.0.tgz}
     version: 1.0.0
 
   vosklet-speaker@file:vosklet-speaker/vosklet-speaker-1.0.0.tgz:

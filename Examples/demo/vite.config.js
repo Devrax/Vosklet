@@ -90,7 +90,7 @@ function speakerModel() {
   };
 }
 
-// One app, four pages: a home page routing to the three examples. Each
+// One app, five pages: a home page routing to the four examples. Each
 // example page keeps its own entry so bundlers only load the engine that
 // page actually uses.
 export default defineConfig({
@@ -108,7 +108,8 @@ export default defineConfig({
         home: path.join(appDir, "index.html"),
         challenge: path.join(appDir, "challenge/index.html"),
         worker: path.join(appDir, "worker/index.html"),
-        speaker: path.join(appDir, "speaker/index.html")
+        speaker: path.join(appDir, "speaker/index.html"),
+        spk: path.join(appDir, "spk/index.html")
       }
     }
   }

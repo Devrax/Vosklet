@@ -17,6 +17,7 @@
 let module;
 let nextId = 1;
 const models = new Map();
+const spkModels = new Map();
 const recognizers = new Map();
 
 function parseSegment(raw) {
@@ -28,12 +29,34 @@ function parseSegment(raw) {
   }
 }
 
+// Parses one recognizer result, extracting the speaker x-vector Vosk adds to
+// final results when a speaker model is attached to the recognizer.
+function parseSpeakerVector(raw) {
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed.spk) && parsed.spk.length > 0) {
+      return { vector: parsed.spk, frames: parsed.spk_frames || 1 };
+    }
+  } catch {
+    // Non-JSON payloads carry no x-vector.
+  }
+  return undefined;
+}
+
 function getModel(modelId) {
   const model = models.get(modelId);
   if (!model) {
     throw new Error("Model was unloaded. Call loadModel() again.");
   }
   return model;
+}
+
+function getSpkModel(spkModelId) {
+  const spkModel = spkModels.get(spkModelId);
+  if (!spkModel) {
+    throw new Error("Speaker model was unloaded. Call loadSpkModel() again.");
+  }
+  return spkModel;
 }
 
 function getRecognizerEntry(recognizerId) {
@@ -44,10 +67,20 @@ function getRecognizerEntry(recognizerId) {
   return entry;
 }
 
-async function makeRecognizer(modelId, sampleRate, grammar) {
+async function makeRecognizer(modelId, sampleRate, grammar, spkModelId) {
   const model = getModel(modelId);
+  if (spkModelId != null) {
+    if (grammar) {
+      throw new Error("A grammar cannot be combined with a speaker model.");
+    }
+    return module.createRecognizerWithSpkModel(
+      model,
+      sampleRate,
+      getSpkModel(spkModelId)
+    );
+  }
   return grammar
-    ? module.createRecognizerWithGrm(model, grammar, sampleRate)
+    ? module.createRecognizerWithGrm(model, sampleRate, grammar)
     : module.createRecognizer(model, sampleRate);
 }
 
@@ -84,12 +117,37 @@ const handlers = {
     return {};
   },
 
-  async transcribe({ callId, modelId, blocks, sampleRate, grammar, progressEveryBlocks }) {
-    const recognizer = await makeRecognizer(modelId, sampleRate, grammar);
+  async loadSpkModel({ url, id, storagePath }) {
+    const spkModel = await module.createSpkModel(url, storagePath, id);
+    const spkModelId = nextId++;
+    spkModels.set(spkModelId, spkModel);
+    return { spkModelId };
+  },
+
+  async unloadSpkModel({ spkModelId }) {
+    getSpkModel(spkModelId).delete();
+    spkModels.delete(spkModelId);
+    return {};
+  },
+
+  async transcribe({ callId, modelId, blocks, sampleRate, grammar, spkModelId, progressEveryBlocks }) {
+    const recognizer = await makeRecognizer(modelId, sampleRate, grammar, spkModelId);
     const segments = [];
+    const speakerVectors = [];
+    const collectSpeaker = (raw) => {
+      if (spkModelId == null) {
+        return;
+      }
+      const speakerVector = parseSpeakerVector(raw);
+      if (speakerVector) {
+        speakerVectors.push(speakerVector);
+      }
+    };
     try {
       for (let index = 0; index < blocks.length; index += 1) {
-        const segment = parseSegment(recognizer.acceptWaveform(blocks[index]));
+        const raw = recognizer.acceptWaveform(blocks[index]);
+        collectSpeaker(raw);
+        const segment = parseSegment(raw);
         if (segment) {
           segments.push(segment);
           self.postMessage({ type: "segment", callId, segment });
@@ -102,7 +160,9 @@ const handlers = {
           });
         }
       }
-      const finalSegment = parseSegment(recognizer.finalResult());
+      const rawFinal = recognizer.finalResult();
+      collectSpeaker(rawFinal);
+      const finalSegment = parseSegment(rawFinal);
       if (finalSegment) {
         segments.push(finalSegment);
       }
@@ -110,19 +170,35 @@ const handlers = {
       await recognizer.delete();
     }
     self.postMessage({ type: "progress", callId, fraction: 1 });
-    return { text: joinSegments(segments), segments };
+    const result = { text: joinSegments(segments), segments };
+    if (spkModelId != null) {
+      result.speakerVectors = speakerVectors;
+    }
+    return result;
   },
 
-  async createRecognizer({ modelId, sampleRate, grammar }) {
-    const recognizer = await makeRecognizer(modelId, sampleRate, grammar);
+  async createRecognizer({ modelId, sampleRate, grammar, spkModelId }) {
+    const recognizer = await makeRecognizer(modelId, sampleRate, grammar, spkModelId);
     const recognizerId = nextId++;
-    recognizers.set(recognizerId, { recognizer, segments: [] });
+    recognizers.set(recognizerId, {
+      recognizer,
+      segments: [],
+      spkModelId,
+      speakerVectors: []
+    });
     return { recognizerId };
   },
 
   async accept({ recognizerId, block }) {
     const entry = getRecognizerEntry(recognizerId);
-    const segment = parseSegment(entry.recognizer.acceptWaveform(block));
+    const raw = entry.recognizer.acceptWaveform(block);
+    if (entry.spkModelId != null) {
+      const speakerVector = parseSpeakerVector(raw);
+      if (speakerVector) {
+        entry.speakerVectors.push(speakerVector);
+      }
+    }
+    const segment = parseSegment(raw);
     if (segment) {
       entry.segments.push(segment);
     }
@@ -133,14 +209,25 @@ const handlers = {
     const entry = getRecognizerEntry(recognizerId);
     recognizers.delete(recognizerId);
     try {
-      const segment = parseSegment(entry.recognizer.finalResult());
+      const raw = entry.recognizer.finalResult();
+      if (entry.spkModelId != null) {
+        const speakerVector = parseSpeakerVector(raw);
+        if (speakerVector) {
+          entry.speakerVectors.push(speakerVector);
+        }
+      }
+      const segment = parseSegment(raw);
       if (segment) {
         entry.segments.push(segment);
       }
     } finally {
       await entry.recognizer.delete();
     }
-    return { text: joinSegments(entry.segments), segments: entry.segments };
+    const result = { text: joinSegments(entry.segments), segments: entry.segments };
+    if (entry.spkModelId != null) {
+      result.speakerVectors = entry.speakerVectors;
+    }
+    return result;
   },
 
   async cancelRecognizer({ recognizerId }) {
@@ -160,6 +247,7 @@ const handlers = {
   async dispose() {
     await module.cleanUp();
     models.clear();
+    spkModels.clear();
     recognizers.clear();
     return {};
   }

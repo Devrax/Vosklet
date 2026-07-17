@@ -12,7 +12,7 @@
         <p class="eyebrow">Vosklet local · reconocimiento de voz sin conexión</p>
         <h1>Ejemplos</h1>
         <p class="status" role="doc-subtitle">
-          Tres variantes del mismo reto de voz en español. Todo el
+          Cuatro variantes del mismo reto de voz en español. Todo el
           reconocimiento ocurre en tu dispositivo.
         </p>
       </header>
@@ -38,6 +38,15 @@
           <p>
             Añade verificación de voz (<code>vosklet-speaker</code>): registra
             tu voz de referencia y comprueba quién habla al superar el reto.
+          </p>
+        </a>
+        <a class="example-card" href="./spk/index.html">
+          <h2>Reto de voz · Identificación x-vector</h2>
+          <p>
+            Identificación de hablante con el modelo nativo de Vosk
+            (<code>vosk-model-spk-0.4</code>) dentro de un Web Worker
+            (<code>vosklet-mono/worker</code>): registra tu voz y compara
+            huellas x-vector por similitud coseno.
           </p>
         </a>
       </nav>

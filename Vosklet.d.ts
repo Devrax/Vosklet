@@ -21,8 +21,8 @@ export interface Module {
   createRecognizer(model: Model, sampleRate: number): Promise<Recognizer>;
   createRecognizerWithSpkModel(
     model: Model,
-    spkModel: SpkModel,
-    sampleRate: number
+    sampleRate: number,
+    spkModel: SpkModel
   ): Promise<Recognizer>;
   createRecognizerWithGrm(
     model: Model,
