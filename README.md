@@ -17,7 +17,7 @@ So a stock Capacitor or WebView app simply cannot start the threaded runtime. Th
 
 1. **A single-thread Wasm runtime** (`Vosklet.single.js` / `Vosklet.single.wasm`): same API, no `SharedArrayBuffer`, no COOP/COEP, runs anywhere a modern WebView runs. Recognition is slower, so the recommended pattern is *capture first, transcribe after recording ends*.
 2. **[`vosklet-mono/`](vosklet-mono)** — a small, framework-agnostic npm library wrapping both runtimes with the ergonomics an app actually needs: on-demand model loading (local asset **or** external URL, cached across launches), a batch `transcribe()` API with progress callbacks for already-captured PCM, a streaming recognizer, and a slim `vosklet-mono/singlethread` entry that keeps the unused threaded runtime's ~2.4 MB `.wasm` out of your app bundle. Start with its [README](vosklet-mono/README.md) if you are building an app.
-3. **[`demo/`](demo)** — a working Spanish voice-challenge app (Vite + Capacitor) that builds for Android and iOS and exercises the exact packaged library artifact.
+3. **[`Examples/demo/`](Examples/demo)** — a working Spanish voice-challenge app (Vite + Capacitor) that builds for Android and iOS and exercises the exact packaged library artifact.
 
 ## Which part should I use?
 
@@ -167,7 +167,7 @@ The [vosklet-mono README](vosklet-mono/README.md) covers microphone capture, mod
 The demo consumes the exact tarball from Step 2, so it doubles as an integration test:
 
 ```shell
-cd demo
+cd Examples/demo
 pnpm install
 
 pnpm dev            # browser development server
@@ -185,16 +185,16 @@ pnpm ios:run
 Or assemble the debug APK directly:
 
 ```shell
-cd demo/android
+cd Examples/demo/android
 ./gradlew :app:assembleDebug --no-daemon
-# → demo/android/app/build/outputs/apk/debug/app-debug.apk
+# → Examples/demo/android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
 After rebuilding the Wasm runtimes (Step 1), repeat Step 2 and reinstall in the demo so everything picks up the fresh artifacts:
 
 ```shell
 cd vosklet-mono && npm install && npm pack
-cd ../demo && pnpm install
+cd ../Examples/demo && pnpm install
 ```
 
 ## Using the low-level `vosklet` package directly
@@ -241,16 +241,16 @@ For direct microphone PCM, connect `AudioContext.createMediaStreamSource()` to `
 
 ## Spanish Capacitor demo
 
-The demo packages a local Spanish model at [`demo/public/models/es-small.tar`](demo/public/models/es-small.tar). Vite serves it as `/models/es-small.tar`, then Capacitor copies it into the Android and iOS web assets, so recognition is fully offline.
+The demo packages a local Spanish model at [`Examples/demo/public/models/es-small.tar`](Examples/demo/public/models/es-small.tar). Vite serves it as `/models/es-small.tar`, then Capacitor copies it into the Android and iOS web assets, so recognition is fully offline.
 
 It consumes the packaged wrapper library, `"vosklet-mono": "file:../vosklet-mono/vosklet-mono-0.2.1.tgz"`, through the slim `vosklet-mono/singlethread` entry — exercising the exact artifact that would be published to npm while keeping the threaded runtime's `.wasm` out of the app bundle.
 
 Platform notes:
 
 - The Android manifest declares `RECORD_AUDIO` and `MODIFY_AUDIO_SETTINGS`. Install the debug app, grant microphone permission, then use Chrome remote inspection to view the `Vosklet Challenge` logs.
-- The iOS project declares `NSMicrophoneUsageDescription` in `demo/ios/App/App/Info.plist`. iOS WKWebView does not expose `SharedArrayBuffer` in a stock Capacitor app, so the single-thread runtime is the correct choice there as well. The simulator uses the host Mac's microphone.
+- The iOS project declares `NSMicrophoneUsageDescription` in `Examples/demo/ios/App/App/Info.plist`. iOS WKWebView does not expose `SharedArrayBuffer` in a stock Capacitor app, so the single-thread runtime is the correct choice there as well. The simulator uses the host Mac's microphone.
 
-Recording behavior is configured in [`demo/src/main.js`](demo/src/main.js):
+Recording behavior is configured in [`Examples/demo/src/main.js`](Examples/demo/src/main.js):
 
 - `stopAfterSpoken` is the continuous silence delay in milliseconds after the first detected speech block. Its default is `1_500`; assign `false` to require an explicit Stop action.
 - `speechThreshold` is the RMS amplitude used to classify a PCM block as speech. Its default is `0.015` and should be adjusted for unusually noisy or quiet microphone environments.
@@ -264,15 +264,15 @@ The demo only uses those PCM measurements to decide when to stop recording. Capt
 cd vosklet-mono && npm run build && npm run pack:check
 
 # Browser demo build
-pnpm --dir demo run build
+pnpm --dir Examples/demo run build
 
 # Android: copy web assets and build the debug APK
-pnpm --dir demo run android:sync
-cd demo/android && ./gradlew :app:assembleDebug --no-daemon
+pnpm --dir Examples/demo run android:sync
+cd Examples/demo/android && ./gradlew :app:assembleDebug --no-daemon
 
 # iOS: copy web assets and build for the simulator
-pnpm --dir demo run ios:sync
-cd demo/ios/App && xcodebuild -project App.xcodeproj -scheme App -sdk iphonesimulator -configuration Debug build
+pnpm --dir Examples/demo run ios:sync
+cd Examples/demo/ios/App && xcodebuild -project App.xcodeproj -scheme App -sdk iphonesimulator -configuration Debug build
 ```
 
 ## Repository layout
@@ -285,7 +285,7 @@ cd demo/ios/App && xcodebuild -project App.xcodeproj -scheme App -sdk iphonesimu
 | `index.mjs`, `index.single.mjs` | ESM loaders that resolve generated assets safely through bundlers. |
 | `vosklet-mono/` | Consumer-facing npm wrapper library (on-demand models, batch transcription, WebView-safe by default). |
 | `Examples/` | Standalone HTML usage examples. |
-| `demo/` | Vite Spanish challenge application with Capacitor Android and iOS projects. |
+| `Examples/demo/` | Vite Spanish challenge application with Capacitor Android and iOS projects. |
 | `Documentation.md` | Full API reference and deployment notes. |
 | `Documentation.AndroidWebView.md` | Android WebView and Capacitor-specific integration guidance. |
 

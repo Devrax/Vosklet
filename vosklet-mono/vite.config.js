@@ -58,6 +58,39 @@ function bundleVoskletRuntime() {
         path.join(runtimeDir, "Vosklet.d.ts")
       );
 
+      // Worker host: shipped verbatim (minified, not bundled) so the literal
+      // `new Worker(new URL(...))` / `new URL("./runtime/...", ...)` patterns
+      // survive for application bundlers to detect. The worker itself is a
+      // classic script (importScripts) and must stay a standalone file.
+      async function minifyPackageSource(srcName, outName, options) {
+        const source = await readFile(
+          path.join(packageDir, "src", srcName),
+          "utf8"
+        );
+        const { code } = await transformWithEsbuild(source, srcName, {
+          target: "es2020",
+          sourcemap: false,
+          minify: true,
+          ...options
+        });
+        await writeFile(path.join(outDir, outName), code);
+      }
+      await minifyPackageSource("worker.js", "worker.js", {
+        // Classic script exposing handlers via self.onmessage; nothing to
+        // rename at the top level, but keep globals untouched regardless.
+        minifyIdentifiers: false,
+        minify: false,
+        minifyWhitespace: true,
+        minifySyntax: true
+      });
+      await minifyPackageSource("workerHost.js", "worker-host.js", {
+        format: "esm"
+      });
+      await copyFile(
+        path.join(packageDir, "worker-host.d.ts"),
+        path.join(outDir, "worker-host.d.ts")
+      );
+
       // Retarget the public type declarations at the vendored runtime types.
       const declarations = await readFile(
         path.join(packageDir, "index.d.ts"),

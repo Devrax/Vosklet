@@ -1,0 +1,5 @@
+{
+  "appId": "com.devrax.vosklet.challenge.worker",
+  "appName": "Vosklet Challenge Worker",
+  "webDir": "dist"
+}

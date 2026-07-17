@@ -1,12 +1,12 @@
 vosk
 kaldi
 .vscode
-index.html
+/index.html
 openblas
 openfst
 emsdk
 test.js
 test.wasm
 src/*.o
-demo/node_modules
-demo/dist
+Examples/*/node_modules
+Examples/*/dist

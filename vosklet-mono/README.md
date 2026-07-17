@@ -259,6 +259,42 @@ Notes:
 - **iOS / WKWebView:** WebKit *does* implement `SharedArrayBuffer` (Safari 15.2+), but only in cross-origin-isolated contexts — the same COOP/COEP requirement as Chrome. A Capacitor app is served from `capacitor://localhost` through a custom scheme handler where those headers don't apply, so `crossOriginIsolated` stays `false` and `SharedArrayBuffer` is **not exposed** in practice. The default single-thread runtime is the right choice on iOS too, and `runtime: "auto"` resolves it correctly there. (The `.gz` asset warning above is Android-only; iOS does not rewrite bundled assets.)
 - The single-thread path is the one verified end-to-end on Android by this project. The threaded path is wired through but has not been battle-tested here — treat it as upstream Vosklet behavior.
 
+## Running recognition in a Web Worker
+
+The single-thread runtime's one drawback is that it recognizes **on the UI thread**. The `vosklet-mono/worker` entry removes it: the same runtime boots inside a dedicated Web Worker, and the whole API is proxied to it over `postMessage`. Dedicated workers need **no SharedArrayBuffer, COOP, or COEP** — they work in Android WebView, Capacitor, and iOS WKWebView, exactly like the main-thread engine.
+
+```js
+import { createVoskletMonoWorker } from "vosklet-mono/worker";
+
+const engine = await createVoskletMonoWorker();
+
+const spanish = await engine.loadModel({
+  url: "/models/es-small.tar",
+  id: "vosk-model-small-es-0.42",
+  storagePath: "Spanish"
+});
+
+// Same API shape as createVoskletMono() — but recognition happens in the
+// worker, so the page never freezes and no cooperative yielding is needed:
+const { text } = await spanish.transcribe(blocks, {
+  sampleRate,
+  onProgress: (fraction) => updateSpinner(fraction)
+});
+
+await engine.dispose(); // frees everything and terminates the worker
+```
+
+What changes compared to the main-thread engine:
+
+- **The UI thread stays free.** No `yieldEveryBlocks`, no jank during long transcriptions — the worker recognizes at full speed while the page renders normally.
+- **Live streaming becomes viable.** `createRecognizer()` works over the RPC bridge; because recognition happens in the worker, `accept()` is **asynchronous** (`await recognizer.accept(block)`) — that is the one API difference.
+- **Block buffers are transferred, not copied** (zero-copy). After `transcribe(blocks)` the arrays are neutered on the main thread; pass `transfer: false` if you need to keep them.
+- **Capture stays on the main thread.** Workers have no `AudioContext`, so `engine.createTransferer()` runs the AudioWorklet locally and you `postMessage` nothing yourself — wire it to `monitor.push()` or `transcribe()` as usual.
+- `engine.host` is `"worker"`; the runtime is always `"singlethread"` (the threaded runtime manages its own workers and needs cross-origin isolation — pointless to nest).
+- `dispose()` also terminates the worker; `terminate()` hard-stops it without cleanup.
+
+Bundler notes: the entry ships the literal `new Worker(new URL("./worker.js", import.meta.url))` and `new URL("./runtime/...", import.meta.url)` patterns, which Vite and webpack 5 detect and bundle automatically. For setups that don't, `createVoskletMonoWorker({ workerUrl, glueUrl, wasmUrl })` overrides the URL resolution. The worker script is a classic worker (not a module worker), so it runs in every WebView that has workers at all.
+
 ## Model requirements
 
 - The model must be a **USTAR TAR** archive: `.tar`, `.tar.gz`, or `.tgz`. Format detection uses the bytes, not the file extension.
@@ -283,7 +319,7 @@ Notes:
 - [ ] Free resources: recognizers via `finish()`/`cancel()`, models via `unload()`, everything via `engine.dispose()`.
 - [ ] Debug with Chrome remote inspection (`chrome://inspect`) while the app runs on a device.
 
-A complete working example — a Spanish voice-challenge Capacitor app using this exact flow — lives in the parent repository under [`demo/`](https://github.com/Devrax/Vosklet/tree/main/demo).
+A complete working example — a Spanish voice-challenge Capacitor app using this exact flow — lives in the parent repository under [`Examples/demo/`](https://github.com/Devrax/Vosklet/tree/main/Examples/demo), and a Web Worker variant of the same app under [`Examples/demo-worker/`](https://github.com/Devrax/Vosklet/tree/main/Examples/demo-worker).
 
 ## API summary
 
@@ -292,6 +328,8 @@ A complete working example — a Spanish voice-challenge Capacitor app using thi
 | `createVoskletMono(options?)` | Loads a Vosklet runtime, returns the engine. Options: `runtime`, `logLevel`, `moduleArg`. Also exported by `vosklet-mono/singlethread` (single-thread only, slimmer bundle). |
 | `supportsThreadedRuntime()` | `true` when the threaded runtime can run here. |
 | `createSpeechMonitor(options?)` | Energy-based speech monitor: `push(block)` accumulates PCM and fires `onSpeechStart` / `onSpeech` / `onSilence` / `onAutoStop`; `stop()` returns the blocks, `reset()` reuses it. |
+| `createVoskletMonoWorker(options?)` | From `vosklet-mono/worker`: boots the single-thread runtime inside a dedicated Web Worker (no SharedArrayBuffer/COOP/COEP) and returns the same engine API — recognition off the UI thread. |
+| `supportsWorkerHost()` | From `vosklet-mono/worker`: `true` when Web Workers are available. |
 | `getRootMeanSquare(samples)` | RMS (0..1) of one PCM block — for level meters or custom detection. |
 | `engine.loadModel({ url, id, storagePath? })` | Loads a model from a local or external URL; returns a `ModelSession`. |
 | `engine.createTransferer(audioContext, bufferSize?)` | Vosklet `AudioWorklet` node for microphone PCM capture. |

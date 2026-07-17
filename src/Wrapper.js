@@ -3,7 +3,12 @@
  * @suppress {undefinedVars|checkTypes}
  */
 
-if (ENVIRONMENT_IS_WEB) {
+// Dedicated workers need no SharedArrayBuffer or cross-origin isolation, so
+// the wrapper API must also install there — a worker host keeps recognition
+// off the UI thread in WebView/Capacitor apps. AudioWorklet APIs are absent
+// in workers: the transferer processor is only stringified here (never
+// evaluated), and createTransferer() is simply not callable from a worker.
+if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
 
   // 'var' to expose this outside the if
   var objs = [];
