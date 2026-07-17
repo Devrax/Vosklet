@@ -1,6 +1,6 @@
 {
   "name": "vosklet-mono",
-  "version": "0.4.0",
+  "version": "1.0.0",
   "description": "Offline speech recognition for Android WebView and Capacitor apps, wrapping Vosklet (Vosk + WebAssembly) with on-demand local or remote model loading.",
   "type": "module",
   "main": "./dist/index.js",
@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "vite": "^7.0.0",
-    "vosklet": "file:.."
+    "vosklet": "workspace:*"
   },
   "keywords": [
     "speech-recognition",

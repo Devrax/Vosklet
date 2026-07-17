@@ -2,9 +2,9 @@
   "name": "vosklet-spanish-challenge-demo-speaker",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.32.1",
   "scripts": {
     "dev": "vite",
+    "fetch:speaker-model": "curl -L --create-dirs -o models/NeXt_TDNN_C384_B1_K65_7.onnx https://huggingface.co/jaehyun-ko/next-tdnn-onnx/resolve/main/NeXt_TDNN_C384_B1_K65_7.onnx",
     "build": "vite build",
     "android:sync": "pnpm run build && pnpm exec cap sync android",
     "android:open": "pnpm run android:sync && pnpm exec cap open android",
@@ -17,8 +17,7 @@
     "@capacitor/android": "latest",
     "@capacitor/core": "latest",
     "@capacitor/ios": "^8.4.2",
-    "vosklet-mono": "file:../../vosklet-mono/vosklet-mono-0.4.0.tgz",
-    "@jaehyun-ko/speaker-verification": "^5.0.0",
+    "vosklet-speaker": "file:../../vosklet-speaker/vosklet-speaker-1.0.0.tgz",
     "onnxruntime-web": "1.16.3"
   },
   "devDependencies": {

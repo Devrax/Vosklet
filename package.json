@@ -31,13 +31,18 @@
     "Vosklet.single.wasm",
     "Vosklet.d.ts",
     "README.md",
-    "Documentation.md",
-    "Documentation.AndroidWebView.md",
     "LICENSE"
   ],
   "scripts": {
-    "pack:check": "npm pack --dry-run"
+    "setup": "bash scripts/setup.sh",
+    "fetch:models": "bash scripts/fetch-models.sh",
+    "pack:check": "npm pack --dry-run",
+    "build:packages": "pnpm --filter vosklet-mono build && pnpm --filter vosklet-speaker build",
+    "pack:speaker": "pnpm --filter vosklet-mono build && pnpm --filter vosklet-speaker exec npm pack",
+    "demo:speaker": "pnpm --filter vosklet-spanish-challenge-demo-speaker dev",
+    "demo:speaker:build": "pnpm --filter vosklet-spanish-challenge-demo-speaker build"
   },
+  "packageManager": "pnpm@10.32.1",
   "keywords": [
     "speech-recognition",
     "vosk",

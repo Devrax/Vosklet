@@ -43,13 +43,15 @@ The published package is **self-contained**: the build pipeline bundles the [`De
 
 ### Building the package from source
 
-Inside this repository, `vosklet` is a `file:..` dev dependency, so build the Vosklet runtimes at the repository root first (see the root README), then:
+This repository is a pnpm monorepo; `vosklet` is a `workspace:*` dev
+dependency, so build the Vosklet Wasm runtimes at the repository root first
+(see the root README), then from the repository root:
 
 ```shell
-cd vosklet-mono
-npm install
-npm run build     # Vite: bundles + minifies the wrapper, vendors the Vosklet runtime into dist/
-npm run pack:check
+pnpm install
+pnpm --filter vosklet-mono build          # Vite: bundles + minifies the wrapper, vendors the Vosklet runtime into dist/
+pnpm --filter vosklet-mono pack:check     # list the tarball contents
+pnpm --filter vosklet-mono exec npm pack  # → vosklet-mono-<version>.tgz
 ```
 
 `npm pack` / `npm publish` run the build automatically through the `prepack` script, so the tarball always ships a fresh `dist/`.
@@ -339,7 +341,7 @@ A complete working example — a Spanish voice-challenge Capacitor app using thi
 | `session.createRecognizer({ sampleRate, grammar? })` | Streaming recognizer: `accept(block)`, `finish()`, `cancel()`. |
 | `session.unload()` | Frees the native model memory (cached archive is kept). |
 
-Full type definitions are in [`index.d.ts`](index.d.ts). Everything not wrapped here (speaker models, endpointer tuning, NLSML, word-level results) remains reachable through `engine.module` and `recognizer.raw` — see the [Vosklet documentation](https://github.com/Devrax/Vosklet/blob/main/Documentation.md).
+Full type definitions are in [`index.d.ts`](index.d.ts). Everything not wrapped here (speaker models, endpointer tuning, NLSML, word-level results) remains reachable through `engine.module` and `recognizer.raw` — see the runtime's type declarations ([`Vosklet.d.ts`](../Vosklet.d.ts), vendored into the package as `dist/runtime/Vosklet.d.ts`).
 
 ## License
 

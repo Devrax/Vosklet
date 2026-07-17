@@ -218,3 +218,23 @@ textarea:focus-visible,
     font-size: 1.1rem;
   }
 }
+.cache-fab {
+  position: fixed;
+  right: calc(16px + env(safe-area-inset-right));
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: #153b38;
+  color: #ffffff;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(21, 59, 56, 0.35);
+}
+
+.cache-fab:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
