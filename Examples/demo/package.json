@@ -1,8 +1,7 @@
 {
-  "name": "vosklet-spanish-challenge-demo",
+  "name": "vosklet-demos",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.32.1",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -17,7 +16,9 @@
     "@capacitor/android": "latest",
     "@capacitor/core": "latest",
     "@capacitor/ios": "^8.4.2",
-    "vosklet-mono": "file:../../vosklet-mono/vosklet-mono-1.0.0.tgz"
+    "onnxruntime-web": "1.16.3",
+    "vosklet-mono": "file:../../vosklet-mono/vosklet-mono-1.0.0.tgz",
+    "vosklet-speaker": "file:../../vosklet-speaker/vosklet-speaker-1.0.0.tgz"
   },
   "devDependencies": {
     "@capacitor/cli": "latest",

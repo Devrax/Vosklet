@@ -18,15 +18,16 @@ single-thread wasm runtime) is bundled into it at build time. Its only
 dependencies are `onnxruntime-web` and `@jaehyun-ko/speaker-verification`,
 both pinned to exact versions — no version ranges, no surprise transitive
 upgrades. You still serve onnxruntime-web's wasm binaries yourself (see
-`wasmPaths` and the demo-speaker vite config).
+`wasmPaths` and the demo app's vite config).
 
 ## Run the demo
 
-A complete demo app (Vite + Capacitor, Android/iOS) lives at
-[`Examples/demo-speaker`](../Examples/demo-speaker). From a fresh clone of the
-monorepo, `pnpm run setup` at the repository root bootstraps everything —
+A speaker-verification example lives in the monorepo's demo app
+([`Examples/demo`](../Examples/demo), the `speaker/` page). From a fresh
+clone, `pnpm run setup` at the repository root bootstraps everything —
 install, builds, the packed tarball the demo consumes, and the model
-downloads (they are not committed) — then `pnpm run demo:speaker` starts it.
+downloads (they are not committed) — then `pnpm run demo` starts the app
+with a home page routing to every example.
 
 ## Quick start
 
@@ -215,7 +216,8 @@ The suite is a thin composition — every layer is exported on its own:
 
 ## App bundler requirements
 
-Two things the consuming app must configure (see `Examples/demo-speaker`):
+Two things the consuming app must configure (see the demo app's vite config
+in `Examples/demo`):
 
 1. **onnxruntime-web wasm binaries.** Its exports map hides the `.wasm`
    files from bundlers; serve them under `ort/` next to your page (the

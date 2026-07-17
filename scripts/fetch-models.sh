@@ -8,13 +8,12 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
 vosk_id="vosk-model-small-es-0.42"
-# Shared by all three demos: demo serves public/ directly, demo-worker and
-# demo-speaker point their vite publicDir at ../demo/public.
+# Served from the demo app's public/ for every example page.
 vosk_tar="$root/Examples/demo/public/models/es-small.tar"
 onnx_file="NeXt_TDNN_C384_B1_K65_7.onnx"
-onnx_target="$root/Examples/demo-speaker/models/$onnx_file"
+onnx_target="$root/Examples/demo/models/$onnx_file"
 
-# --- Vosk Spanish model (speech recognition; every demo) -------------------
+# --- Vosk Spanish model (speech recognition; every example page) -----------
 if [ -f "$vosk_tar" ]; then
   echo "- $(basename "$vosk_tar") already present, skipping"
 else
@@ -34,7 +33,7 @@ else
   echo "  wrote $vosk_tar"
 fi
 
-# --- NeXt-TDNN speaker model (verification; demo-speaker only) -------------
+# --- NeXt-TDNN speaker model (verification; the speaker example) -----------
 if [ -f "$onnx_target" ]; then
   echo "- $onnx_file already present, skipping"
 else

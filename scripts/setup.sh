@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 speaker_version="$(node -p "require('./vosklet-speaker/package.json').version")"
 speaker_tgz="vosklet-speaker/vosklet-speaker-$speaker_version.tgz"
 
-# demo-speaker consumes vosklet-speaker as a packed tarball, and pnpm cannot
+# The demo app consumes vosklet-speaker as a packed tarball, and pnpm cannot
 # even install the workspace while that file is missing. Bootstrap with a
 # minimal stub tarball; the real pack below overwrites it and the final
 # install re-extracts it (pnpm notices the changed integrity).
@@ -36,5 +36,5 @@ bash scripts/fetch-models.sh
 
 echo
 echo "Setup complete. Try:"
-echo "  pnpm run demo:speaker         # speaker-verification demo (dev server)"
-echo "  pnpm run demo:speaker:build   # production build"
+echo "  pnpm run demo         # dev server: home page routing to every example"
+echo "  pnpm run demo:build   # production build"

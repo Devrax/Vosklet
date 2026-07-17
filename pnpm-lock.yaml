@@ -8,7 +8,7 @@ importers:
 
   .: {}
 
-  Examples/demo-speaker:
+  Examples/demo:
     dependencies:
       '@capacitor/android':
         specifier: latest
@@ -22,6 +22,9 @@ importers:
       onnxruntime-web:
         specifier: 1.16.3
         version: 1.16.3
+      vosklet-mono:
+        specifier: file:../../vosklet-mono/vosklet-mono-1.0.0.tgz
+        version: file:vosklet-mono/vosklet-mono-1.0.0.tgz
       vosklet-speaker:
         specifier: file:../../vosklet-speaker/vosklet-speaker-1.0.0.tgz
         version: file:vosklet-speaker/vosklet-speaker-1.0.0.tgz
@@ -1079,8 +1082,12 @@ packages:
       yaml:
         optional: true
 
+  vosklet-mono@file:vosklet-mono/vosklet-mono-1.0.0.tgz:
+    resolution: {integrity: sha512-Ywj7j+N9uBqzI4yhqtbEyiGQdOlQSSvpWLXLVOoSMS5TrtSS5G0KTLn1GboC6z9cZ3mmSSpBeHtynIWZuEglSQ==, tarball: file:vosklet-mono/vosklet-mono-1.0.0.tgz}
+    version: 1.0.0
+
   vosklet-speaker@file:vosklet-speaker/vosklet-speaker-1.0.0.tgz:
-    resolution: {integrity: sha512-Q5V/fT8/fJeUqXOt7Hgdu+RwwP9WP//1gAyWCUT0Yy+Fl52h6mFytS+BQoob099tjVZrxk2GIDttvF3LH0rgCA==, tarball: file:vosklet-speaker/vosklet-speaker-1.0.0.tgz}
+    resolution: {integrity: sha512-P2Wr1Xil8x8uvKX708cW/B2XhKLOAg9hIZ61M3sKYqrBfa7H48r0qXcYzVgaL0tMIFdQ4aIB9X7/PFa7DIEG6Q==, tarball: file:vosklet-speaker/vosklet-speaker-1.0.0.tgz}
     version: 1.0.0
 
   which@2.0.2:
@@ -1952,6 +1959,8 @@ snapshots:
       '@types/node': 26.1.1
       esbuild: 0.28.1
       fsevents: 2.3.3
+
+  vosklet-mono@file:vosklet-mono/vosklet-mono-1.0.0.tgz: {}
 
   vosklet-speaker@file:vosklet-speaker/vosklet-speaker-1.0.0.tgz:
     dependencies:

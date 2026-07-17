@@ -321,7 +321,7 @@ Bundler notes: the entry ships the literal `new Worker(new URL("./worker.js", im
 - [ ] Free resources: recognizers via `finish()`/`cancel()`, models via `unload()`, everything via `engine.dispose()`.
 - [ ] Debug with Chrome remote inspection (`chrome://inspect`) while the app runs on a device.
 
-A complete working example — a Spanish voice-challenge Capacitor app using this exact flow — lives in the parent repository under [`Examples/demo/`](https://github.com/Devrax/Vosklet/tree/main/Examples/demo), and a Web Worker variant of the same app under [`Examples/demo-worker/`](https://github.com/Devrax/Vosklet/tree/main/Examples/demo-worker).
+A complete working example — a Spanish voice-challenge Capacitor app using this exact flow — lives in the parent repository under [`Examples/demo/`](https://github.com/Devrax/Vosklet/tree/main/Examples/demo): its home page routes to a main-thread version, a Web Worker version of the same challenge, and a speaker-verification variant.
 
 ## API summary
 

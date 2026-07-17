@@ -193,7 +193,8 @@ export interface SpeakerVerifierOptions {
   /**
    * Where onnxruntime-web loads its .wasm binaries from. Default: `ort/`
    * resolved against the page URL — serve/copy the binaries there (see the
-   * demo-speaker vite config).
+   * demo app's vite config). Pass an absolute URL when pages live in
+   * subdirectories.
    */
   wasmPaths?: string;
   /** Reference persistence. Default: localStorage keyed by model alias. */
