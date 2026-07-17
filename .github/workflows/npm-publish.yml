@@ -101,11 +101,11 @@ jobs:
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
           # Optional bootstrap fallback; npm prefers configured OIDC.
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish "artifacts/monosklet-${RELEASE_VERSION}.tgz" --access public
+        run: npm publish "./artifacts/monosklet-${RELEASE_VERSION}.tgz" --access public
 
       - name: Publish speaklet
         env:
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
           # Optional bootstrap fallback; npm prefers configured OIDC.
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish "artifacts/speaklet-${RELEASE_VERSION}.tgz" --access public
+        run: npm publish "./artifacts/speaklet-${RELEASE_VERSION}.tgz" --access public
