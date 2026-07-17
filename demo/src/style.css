@@ -103,8 +103,15 @@ textarea:focus-visible,
   padding: 34px 0 30px;
 }
 
-.record-button {
+.recording-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
   width: min(100%, 304px);
+}
+
+.record-button {
+  width: 100%;
   min-height: 72px;
   border: 0;
   border-radius: 6px;
@@ -119,11 +126,15 @@ textarea:focus-visible,
   touch-action: none;
 }
 
-.record-button:enabled:active,
-.record-button.is-recording {
+.record-button:enabled:active {
   background: #a13d2d;
   box-shadow: 0 2px 0 #6b251c;
   transform: translateY(3px);
+}
+
+.stop-button:enabled {
+  background: #a13d2d;
+  box-shadow: 0 5px 0 #6b251c;
 }
 
 .record-button:disabled {

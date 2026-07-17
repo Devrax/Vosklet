@@ -49,7 +49,7 @@ export interface SpkModel {
 }
 
 export interface Recognizer extends EventTarget {
-  acceptWaveform(audioData: Float32Array): void;
+  acceptWaveform(audioData: Float32Array): string;
   setWords(words: boolean): void;
   setPartialWords(partialWords: boolean): void;
   setNLSML(nlsml: boolean): void;

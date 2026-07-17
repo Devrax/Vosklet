@@ -95,14 +95,6 @@ if (ENVIRONMENT_IS_WEB) {
       super();
       objs.push(this);
     }
-    acceptWaveform(audioData) {
-      let start = _malloc(audioData.length * 4);
-      HEAPF32.set(audioData, start / 4);
-      return UTF8ToString(this.obj['acceptWaveform'](start, audioData.length));
-    }
-    finalResult() {
-      return UTF8ToString(this.obj['finalResult']());
-    }
     delete() {
       this.obj.delete();
     }
@@ -127,7 +119,15 @@ if (ENVIRONMENT_IS_WEB) {
       return result;
     }
   }
-  Module = {
+  Recognizer.prototype['acceptWaveform'] = function(audioData) {
+    let start = _malloc(audioData.length * 4);
+    HEAPF32.set(audioData, start / 4);
+    return this.obj['acceptWaveform'](start, audioData.length);
+  };
+  Recognizer.prototype['finalResult'] = function() {
+    return this.obj['finalResult']();
+  };
+  Object.assign(Module, {
     'getModelCache': () => _cache,
 
     'cleanUp': async () => {
@@ -160,6 +160,6 @@ if (ENVIRONMENT_IS_WEB) {
 
     'createRecognizerWithSpkModel': (model, sampleRate, spkModel) =>
       Recognizer.mk(model.obj, sampleRate, 2, null, spkModel.obj)
-  }
+  });
 
 }

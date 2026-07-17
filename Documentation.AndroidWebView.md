@@ -24,14 +24,16 @@ Serve content as:
 
 The wrapper detects model format from bytes, so extensionless URLs are supported.
 
-## 3) Capacitor flow for completed recordings
+## 3) Capacitor microphone flow
 
-- Record user audio (`MediaRecorder`) or accept user-selected `File`.
-- Decode with `AudioContext.decodeAudioData`.
-- Feed mono Float32 PCM to `recognizer.acceptWaveform()` in ordered chunks.
-- Call `recognizer.finalResult()` after the last chunk to flush final text.
+Android WebView can record `audio/webm;codecs=opus` with `MediaRecorder`, but it may not decode that format through `AudioContext.decodeAudioData`. For a live microphone, capture PCM directly instead:
 
-See [Examples/fromRecordingBatch.html](Examples/fromRecordingBatch.html) for a minimal implementation.
+- Create or resume an `AudioContext` from the user gesture.
+- Connect `createMediaStreamSource()` to `module.createTransferer(context, 128 * 15)`.
+- Store each `transferer.port.onmessage` `Float32Array` while recording, then pass the blocks to `recognizer.acceptWaveform()` after the user selects Stop.
+- On Stop, disconnect the microphone node, stop its tracks, call `recognizer.finalResult()`, and release the recognizer.
+
+This keeps the audio in mono Float32 PCM and avoids a browser-specific WebM/Opus decoder. See [Examples/fromMic.html](Examples/fromMic.html) for the transferer setup. Use `decodeAudioData()` only for imported audio files whose format the browser supports.
 
 ## Tradeoffs and limitations
 

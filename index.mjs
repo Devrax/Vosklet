@@ -1,4 +1,5 @@
 let loadScript;
+const wasmUrl = new URL("./Vosklet.wasm", import.meta.url).href;
 
 function getLoader() {
   if (typeof globalThis.loadVosklet === "function") {
@@ -31,7 +32,11 @@ function getLoader() {
   return loadScript;
 }
 
-export async function loadVosklet(moduleArg) {
+export async function loadVosklet(moduleArg = {}) {
   const loader = await getLoader();
-  return loader(moduleArg);
+  return loader({
+    ...moduleArg,
+    locateFile: moduleArg.locateFile ?? ((path, prefix) =>
+      path.endsWith(".wasm") ? wasmUrl : `${prefix}${path}`)
+  });
 }
