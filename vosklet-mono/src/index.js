@@ -1,6 +1,7 @@
 import { bootEngine, resolveRuntime, supportsThreadedRuntime } from "./core.js";
 
 export { supportsThreadedRuntime };
+export { createSpeechMonitor, getRootMeanSquare } from "./speechMonitor.js";
 
 async function importLoader(runtime) {
   const entry = runtime === "threaded"

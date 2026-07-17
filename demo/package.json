@@ -17,7 +17,7 @@
     "@capacitor/android": "latest",
     "@capacitor/core": "latest",
     "@capacitor/ios": "^8.4.2",
-    "vosklet-mono": "file:../vosklet-mono/vosklet-mono-0.2.1.tgz"
+    "vosklet-mono": "file:../vosklet-mono/vosklet-mono-0.3.0.tgz"
   },
   "devDependencies": {
     "@capacitor/cli": "latest",

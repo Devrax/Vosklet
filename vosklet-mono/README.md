@@ -124,6 +124,46 @@ const { text } = await spanish.transcribe(blocks, {
 
 > **Why capture first, transcribe after?** The single-thread runtime recognizes on the UI thread. Feeding it live audio competes with capture and rendering. Recording first and batch-transcribing afterwards is the pattern verified on Android. `transcribe()` yields to the event loop every few blocks (configurable via `yieldEveryBlocks`) so progress UI stays responsive.
 
+### Speech hooks: auto-stop on silence
+
+Most voice UIs want to stop recording by themselves once the user finishes talking. `createSpeechMonitor()` packages that: feed it the same PCM blocks you are capturing and it detects speech, tracks silence, and hands you every captured block the moment the speaker has been quiet long enough:
+
+```js
+import { createVoskletMono, createSpeechMonitor } from "vosklet-mono/singlethread";
+
+const monitor = createSpeechMonitor({
+  speechThreshold: 0.015,   // RMS level a block must reach to count as speech
+  stopAfterSpoken: 2_000,   // ms of silence AFTER speech before onAutoStop
+  onSpeechStart: () => showListeningIndicator(),
+  onSilence: (ms) => updateCountdown(ms),
+  onAutoStop: async (blocks) => {
+    stopMicrophone();       // your capture teardown
+    const { text } = await spanish.transcribe(blocks, {
+      sampleRate: audioContext.sampleRate
+    });
+    console.log("Recognized:", text);
+  }
+});
+
+// Wire it where your capture produces blocks:
+transferer.port.onmessage = (event) => monitor.push(event.data);
+
+// A manual stop button is the same flow — stop() returns the blocks:
+stopButton.onclick = () => {
+  const blocks = monitor.stop();
+  if (blocks.length) transcribeNow(blocks);
+};
+```
+
+Behavior details:
+
+- Silence **before** the user ever speaks never triggers the auto-stop — the countdown only starts after the first block crosses `speechThreshold`, and every new speech block resets it.
+- After `onAutoStop` (or `stop()`), the monitor ignores further `push()` calls; call `reset()` to reuse it for the next recording.
+- The blocks handed to `onAutoStop` include everything captured since monitoring began (pre-speech audio too), so the recognizer sees the full recording.
+- Detection is **energy-based** (per-block RMS against a threshold), which works well for quiet rooms and challenge/command UIs. It is not a full VAD: in noisy environments, raise `speechThreshold` or supply your own detection and use `getRootMeanSquare()` as a building block.
+- Pass `stopAfterSpoken: Infinity` to disable the auto-stop and keep only the accumulation + speech callbacks.
+- The monitor is pure JS with no wasm or microphone access — your app still owns capture, exactly as before.
+
 ## Loading models on demand
 
 `loadModel()` is how you tell vosklet-mono which model to use — per call, at runtime:
@@ -251,6 +291,8 @@ A complete working example — a Spanish voice-challenge Capacitor app using thi
 | --- | --- |
 | `createVoskletMono(options?)` | Loads a Vosklet runtime, returns the engine. Options: `runtime`, `logLevel`, `moduleArg`. Also exported by `vosklet-mono/singlethread` (single-thread only, slimmer bundle). |
 | `supportsThreadedRuntime()` | `true` when the threaded runtime can run here. |
+| `createSpeechMonitor(options?)` | Energy-based speech monitor: `push(block)` accumulates PCM and fires `onSpeechStart` / `onSpeech` / `onSilence` / `onAutoStop`; `stop()` returns the blocks, `reset()` reuses it. |
+| `getRootMeanSquare(samples)` | RMS (0..1) of one PCM block — for level meters or custom detection. |
 | `engine.loadModel({ url, id, storagePath? })` | Loads a model from a local or external URL; returns a `ModelSession`. |
 | `engine.createTransferer(audioContext, bufferSize?)` | Vosklet `AudioWorklet` node for microphone PCM capture. |
 | `engine.module` | The raw Vosklet module (escape hatch to the full upstream API). |
