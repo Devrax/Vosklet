@@ -1,0 +1,73 @@
+name: Build npm tarballs
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Pack monosklet and speaklet
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install package build dependencies
+        run: pnpm install --filter monosklet --filter speaklet --frozen-lockfile
+
+      - name: Build npm tarballs
+        run: |
+          mkdir -p artifacts
+          pnpm --filter monosklet exec npm pack \
+            --pack-destination "$GITHUB_WORKSPACE/artifacts"
+          pnpm --filter speaklet exec npm pack \
+            --pack-destination "$GITHUB_WORKSPACE/artifacts"
+
+      - name: Verify package identities and contents
+        run: |
+          for package_name in monosklet speaklet; do
+            package_version="$(node -p \
+              "require('./${package_name}/package.json').version")"
+            archive="artifacts/${package_name}-${package_version}.tgz"
+            test -f "$archive"
+
+            archived_name="$(tar -xOzf "$archive" package/package.json | \
+              node -p 'JSON.parse(require("node:fs").readFileSync(0, "utf8")).name')"
+            archived_version="$(tar -xOzf "$archive" package/package.json | \
+              node -p 'JSON.parse(require("node:fs").readFileSync(0, "utf8")).version')"
+
+            test "$archived_name" = "$package_name"
+            test "$archived_version" = "$package_version"
+            tar -tzf "$archive" | grep -qx 'package/README.md'
+            tar -tzf "$archive" | grep -qx 'package/THIRD_PARTY_NOTICES.md'
+          done
+
+          cd artifacts
+          sha256sum ./*.tgz > SHA256SUMS
+
+      - name: Upload npm tarballs
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-tarballs
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
