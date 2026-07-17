@@ -18,12 +18,10 @@ const recordingOptions = {
   speechThreshold: 0.015
 };
 
-// Enrollment: a phonetically rich paragraph (includes ñ, ü, varied vowels)
-// long enough (~15 s spoken) for a stable reference embedding.
+// Enrollment: one phonetically rich sentence (~8 s spoken) — short enough to
+// read comfortably, long enough for a stable reference embedding.
 const enrollmentText =
-  "El veloz murciélago hindú comía feliz cardillo y kiwi. " +
-  "La cigüeña tocaba el saxofón detrás del palenque de paja. " +
-  "Hablo con calma y claridad para registrar mi voz de referencia.";
+  "El veloz murciélago hindú comía feliz cardillo y kiwi mientras registro mi voz con calma.";
 
 // Reading a paragraph has natural pauses at the periods, so give the
 // auto-stop more slack during enrollment than during the short challenge.
