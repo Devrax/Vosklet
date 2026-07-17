@@ -1,4 +1,4 @@
 packages:
-  - vosklet-mono
-  - vosklet-speaker
-  - Examples/demo-speaker
+  - monosklet
+  - speaklet
+  - Examples/demo

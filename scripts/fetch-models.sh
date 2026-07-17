@@ -8,13 +8,15 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
 vosk_id="vosk-model-small-es-0.42"
-# Shared by all three demos: demo serves public/ directly, demo-worker and
-# demo-speaker point their vite publicDir at ../demo/public.
+# Served from the demo app's public/ for every example page.
 vosk_tar="$root/Examples/demo/public/models/es-small.tar"
+spk_id="vosk-model-spk-0.4"
+# Native Vosk speaker-identification (x-vector) model; the spk example.
+spk_tar="$root/Examples/demo/public/models/spk-0.4.tar"
 onnx_file="NeXt_TDNN_C384_B1_K65_7.onnx"
-onnx_target="$root/Examples/demo-speaker/models/$onnx_file"
+onnx_target="$root/Examples/demo/models/$onnx_file"
 
-# --- Vosk Spanish model (speech recognition; every demo) -------------------
+# --- Vosk Spanish model (speech recognition; every example page) -----------
 if [ -f "$vosk_tar" ]; then
   echo "- $(basename "$vosk_tar") already present, skipping"
 else
@@ -34,7 +36,25 @@ else
   echo "  wrote $vosk_tar"
 fi
 
-# --- NeXt-TDNN speaker model (verification; demo-speaker only) -------------
+# --- Vosk speaker model (x-vector identification; the spk example) ---------
+if [ -f "$spk_tar" ]; then
+  echo "- $(basename "$spk_tar") already present, skipping"
+else
+  echo "- Downloading $spk_id (~13 MB) from alphacephei.com..."
+  # No EXIT trap here: it would replace the Spanish model's trap above.
+  spk_tmp="$(mktemp -d)"
+  curl -fL --progress-bar -o "$spk_tmp/model.zip" \
+    "https://alphacephei.com/vosk/models/$spk_id.zip"
+  unzip -q "$spk_tmp/model.zip" -d "$spk_tmp"
+  mkdir -p "$(dirname "$spk_tar")"
+  # Same USTAR TAR repackaging (and .tar-not-.gz naming) as the Vosk
+  # Spanish model above; see that comment for the reasons.
+  (cd "$spk_tmp/$spk_id" && tar --format=ustar -czf "$spk_tar" .)
+  rm -rf "$spk_tmp"
+  echo "  wrote $spk_tar"
+fi
+
+# --- NeXt-TDNN speaker model (verification; the speaker example) -----------
 if [ -f "$onnx_target" ]; then
   echo "- $onnx_file already present, skipping"
 else

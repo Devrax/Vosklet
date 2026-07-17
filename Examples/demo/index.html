@@ -4,35 +4,53 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#153b38" />
-    <title>Reto de voz</title>
+    <title>Vosklet — ejemplos</title>
   </head>
   <body>
     <main class="app-shell">
       <header class="masthead">
-        <p class="eyebrow">Vosklet local</p>
-        <h1>Reto de voz</h1>
-        <p id="status" class="status" role="status">Preparando el modelo local...</p>
+        <p class="eyebrow">Vosklet local · reconocimiento de voz sin conexión</p>
+        <h1>Ejemplos</h1>
+        <p class="status" role="doc-subtitle">
+          Cuatro variantes del mismo reto de voz en español. Todo el
+          reconocimiento ocurre en tu dispositivo.
+        </p>
       </header>
 
-      <section class="challenge" aria-labelledby="challenge-label">
-        <label id="challenge-label" for="challengeText">Reto escrito</label>
-        <textarea id="challengeText" rows="3" spellcheck="true">La práctica constante mejora la pronunciación.</textarea>
-      </section>
-
-      <section class="recording" aria-label="Grabación de respuesta">
-        <div class="recording-controls">
-          <button id="startButton" class="record-button" type="button" disabled>Hablar</button>
-          <button id="stopButton" class="record-button stop-button" type="button" disabled>Detener</button>
-        </div>
-        <p id="recordingState" class="recording-state">Modelo local listo</p>
-      </section>
-
-      <section class="transcript-section" aria-labelledby="transcript-label">
-        <p id="transcript-label" class="eyebrow">Texto reconocido</p>
-        <output id="transcript" class="transcript" aria-live="polite">Aún no hay una respuesta.</output>
-      </section>
+      <nav class="example-list" aria-label="Ejemplos disponibles">
+        <a class="example-card" href="./challenge/index.html">
+          <h2>Reto de voz</h2>
+          <p>
+            Motor en el hilo principal (<code>monosklet/singlethread</code>):
+            graba una frase, transcríbela y compárala con el reto escrito.
+          </p>
+        </a>
+        <a class="example-card" href="./worker/index.html">
+          <h2>Reto de voz · Web Worker</h2>
+          <p>
+            El mismo reto con el motor dentro de un Web Worker
+            (<code>monosklet/worker</code>): la interfaz nunca se bloquea
+            durante la transcripción.
+          </p>
+        </a>
+        <a class="example-card" href="./speaker/index.html">
+          <h2>Reto de voz · Verificación de hablante</h2>
+          <p>
+            Añade verificación de voz (<code>speaklet</code>): registra
+            tu voz de referencia y comprueba quién habla al superar el reto.
+          </p>
+        </a>
+        <a class="example-card" href="./spk/index.html">
+          <h2>Reto de voz · Identificación x-vector</h2>
+          <p>
+            Identificación de hablante con el modelo nativo de Vosk
+            (<code>vosk-model-spk-0.4</code>) dentro de un Web Worker
+            (<code>monosklet/worker</code>): registra tu voz y compara
+            huellas x-vector por similitud coseno.
+          </p>
+        </a>
+      </nav>
     </main>
-    <button id="clearCacheButton" class="cache-fab" type="button" title="Borrar los modelos descargados y recargar" aria-label="Borrar caché">🧹</button>
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="/src/home.js"></script>
   </body>
 </html>

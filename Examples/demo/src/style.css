@@ -66,9 +66,44 @@ h1 {
 }
 
 .challenge,
-.transcript-section {
+.transcript-section,
+.reference {
   padding: 28px 0;
   border-bottom: 1px solid #a7bbb0;
+}
+
+.reference-text {
+  margin: 14px 0 0;
+  border-left: 6px solid #c59a2b;
+  color: #405b54;
+  font-size: 1.05rem;
+  font-style: italic;
+  line-height: 1.5;
+  padding: 10px 0 10px 16px;
+}
+
+.reference-controls {
+  margin-top: 16px;
+}
+
+.enroll-button {
+  min-height: 52px;
+  font-size: 0.9rem;
+}
+
+.similarity {
+  margin: 16px 0 0;
+  font-family: "Courier New", monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.similarity.is-similar {
+  color: #167249;
+}
+
+.similarity.is-different {
+  color: #b42318;
 }
 
 label {
@@ -202,4 +237,59 @@ textarea:focus-visible,
 .cache-fab:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+.back-link {
+  color: #405b54;
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.back-link:hover {
+  color: #153b38;
+  text-decoration: underline;
+}
+
+.example-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.example-card {
+  background: #f8fbf7;
+  border: 1px solid #cfe0d4;
+  border-radius: 14px;
+  color: inherit;
+  display: block;
+  padding: 20px 22px;
+  text-decoration: none;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.example-card:hover {
+  border-color: #153b38;
+  transform: translateY(-1px);
+}
+
+.example-card h2 {
+  color: #153b38;
+  font-size: 1.15rem;
+  margin: 0 0 8px;
+}
+
+.example-card p {
+  color: #405b54;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.example-card code {
+  font-size: 0.85em;
 }

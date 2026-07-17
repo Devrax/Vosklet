@@ -1,0 +1,62 @@
+{
+  "name": "monosklet",
+  "version": "1.0.0",
+  "description": "Offline speech recognition for Android WebView and Capacitor apps, wrapping Vosklet (Vosk + WebAssembly) with on-demand local or remote model loading.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./singlethread": {
+      "types": "./dist/singlethread.d.ts",
+      "import": "./dist/singlethread.js",
+      "default": "./dist/singlethread.js"
+    },
+    "./worker": {
+      "types": "./dist/worker-host.d.ts",
+      "import": "./dist/worker-host.js",
+      "default": "./dist/worker-host.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "prepack": "npm run build",
+    "pack:check": "npm pack --dry-run"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0",
+    "vosklet": "workspace:*"
+  },
+  "keywords": [
+    "speech-recognition",
+    "vosk",
+    "vosklet",
+    "wasm",
+    "webassembly",
+    "android",
+    "webview",
+    "capacitor",
+    "offline",
+    "single-thread",
+    "mono"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Devrax/Vosklet.git",
+    "directory": "monosklet"
+  },
+  "license": "MIT"
+}
